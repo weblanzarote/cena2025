@@ -486,6 +486,36 @@
         <div style="margin-top: 8px;">⌨️ Usa las flechas <strong>← ↑ → ↓</strong> para moverte | 🦠 Evita los virus rojos</div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, addDoc, query, orderBy, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyASPv5u2Dki8EoE_mvKsT9ZaCTDRgHdT7k",
+            authDomain: "cena2025-50ee4.firebaseapp.com",
+            projectId: "cena2025-50ee4",
+            storageBucket: "cena2025-50ee4.firebasestorage.app",
+            messagingSenderId: "217478996211",
+            appId: "1:217478996211:web:ad9d7130f39ef8bd6f5786",
+            measurementId: "G-25ECVJ97ZM"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Make Firebase available globally
+        window.firebaseDb = db;
+        window.firebaseCollection = collection;
+        window.firebaseGetDocs = getDocs;
+        window.firebaseAddDoc = addDoc;
+        window.firebaseQuery = query;
+        window.firebaseOrderBy = orderBy;
+        window.firebaseLimit = limit;
+    </script>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -518,17 +548,51 @@
         let playerName = ['A', 'A', 'A'];
         const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ';
 
-        // High Scores Manager - Easy to switch to Firebase
+        // High Scores Manager - Supports both localStorage and Firebase
         const HighScoresManager = {
             storageKey: 'microsistemas_highscores',
-            useFirebase: false, // Switch to true when Firebase is configured
+            useFirebase: true, // Now using Firebase for global scores!
+            collectionName: 'highscores',
+
+            // Wait for Firebase to be ready
+            async waitForFirebase() {
+                let attempts = 0;
+                while (!window.firebaseDb && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                if (!window.firebaseDb) {
+                    console.warn('Firebase not loaded, falling back to localStorage');
+                    this.useFirebase = false;
+                }
+            },
 
             // Get high scores from localStorage or Firebase
             async getScores() {
                 if (this.useFirebase) {
-                    // TODO: Firebase implementation
-                    // return await fetchFromFirebase();
-                    return [];
+                    try {
+                        await this.waitForFirebase();
+                        if (!window.firebaseDb) throw new Error('Firebase not available');
+
+                        const scoresRef = window.firebaseCollection(window.firebaseDb, this.collectionName);
+                        const q = window.firebaseQuery(
+                            scoresRef,
+                            window.firebaseOrderBy('time', 'asc'),
+                            window.firebaseLimit(10)
+                        );
+                        const querySnapshot = await window.firebaseGetDocs(q);
+
+                        const scores = [];
+                        querySnapshot.forEach((doc) => {
+                            scores.push({ id: doc.id, ...doc.data() });
+                        });
+                        return scores;
+                    } catch (error) {
+                        console.error('Error fetching from Firebase:', error);
+                        // Fallback to localStorage
+                        const scores = localStorage.getItem(this.storageKey);
+                        return scores ? JSON.parse(scores) : [];
+                    }
                 } else {
                     const scores = localStorage.getItem(this.storageKey);
                     return scores ? JSON.parse(scores) : [];
@@ -538,23 +602,49 @@
             // Save high scores to localStorage or Firebase
             async saveScores(scores) {
                 if (this.useFirebase) {
-                    // TODO: Firebase implementation
-                    // await saveToFirebase(scores);
+                    // Firebase saves are done via addScore, not batch saves
+                    // This method is kept for localStorage fallback
                 } else {
                     localStorage.setItem(this.storageKey, JSON.stringify(scores));
                 }
             },
 
-            // Add a new score and return if it's a high score
+            // Add a new score and return rank
             async addScore(name, time) {
-                const scores = await this.getScores();
-                scores.push({ name, time, date: new Date().toISOString() });
-                scores.sort((a, b) => a.time - b.time);
-                const top10 = scores.slice(0, 10);
-                await this.saveScores(top10);
+                if (this.useFirebase) {
+                    try {
+                        await this.waitForFirebase();
+                        if (!window.firebaseDb) throw new Error('Firebase not available');
 
-                const rank = top10.findIndex(s => s.name === name && s.time === time);
-                return rank !== -1 ? rank : -1;
+                        // Add to Firebase
+                        const scoresRef = window.firebaseCollection(window.firebaseDb, this.collectionName);
+                        await window.firebaseAddDoc(scoresRef, {
+                            name: name,
+                            time: time,
+                            date: new Date().toISOString()
+                        });
+
+                        // Get updated scores to find rank
+                        const scores = await this.getScores();
+                        const rank = scores.findIndex(s => s.name === name && s.time === time);
+                        return rank !== -1 ? rank : -1;
+                    } catch (error) {
+                        console.error('Error adding to Firebase:', error);
+                        // Fallback to localStorage
+                        this.useFirebase = false;
+                        return await this.addScore(name, time);
+                    }
+                } else {
+                    // localStorage implementation
+                    const scores = await this.getScores();
+                    scores.push({ name, time, date: new Date().toISOString() });
+                    scores.sort((a, b) => a.time - b.time);
+                    const top10 = scores.slice(0, 10);
+                    await this.saveScores(top10);
+
+                    const rank = top10.findIndex(s => s.name === name && s.time === time);
+                    return rank !== -1 ? rank : -1;
+                }
             },
 
             // Check if time qualifies for top 10
