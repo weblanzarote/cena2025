@@ -188,6 +188,225 @@
             background-color: #fff;
             border-color: #eab003;
         }
+
+        /* Timer Display */
+        #timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #eab003;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(234, 176, 3, 0.8);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border: 2px solid #eab003;
+            border-radius: 5px;
+        }
+
+        /* High Scores Screen */
+        #highScoresScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+            overflow-y: auto;
+        }
+
+        #highScoresScreen.hidden {
+            display: none;
+        }
+
+        .highScoresTitle {
+            color: #eab003;
+            font-size: 42px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(234, 176, 3, 0.8);
+            letter-spacing: 3px;
+        }
+
+        .scoresTable {
+            margin: 20px 0;
+            min-width: 500px;
+        }
+
+        .scoreRow {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 30px;
+            margin: 5px 0;
+            background-color: rgba(234, 176, 3, 0.1);
+            border: 1px solid rgba(234, 176, 3, 0.3);
+            font-size: 20px;
+        }
+
+        .scoreRow.newScore {
+            background-color: rgba(234, 176, 3, 0.3);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .scoreRank {
+            color: #eab003;
+            font-weight: bold;
+            min-width: 50px;
+        }
+
+        .scoreName {
+            color: #fff;
+            min-width: 100px;
+            font-weight: bold;
+        }
+
+        .scoreTime {
+            color: #eab003;
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .continueButton {
+            background-color: #eab003;
+            color: #000;
+            border: 4px solid #fff;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin-top: 30px;
+            transition: all 0.3s;
+        }
+
+        .continueButton:hover {
+            background-color: #fff;
+            color: #000;
+            border-color: #eab003;
+        }
+
+        /* Name Entry Screen */
+        #nameEntryScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+        }
+
+        #nameEntryScreen.hidden {
+            display: none;
+        }
+
+        .nameEntryTitle {
+            color: #eab003;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(234, 176, 3, 0.8);
+        }
+
+        .yourTimeDisplay {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+
+        .nameInputContainer {
+            display: flex;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .letterBox {
+            width: 80px;
+            height: 100px;
+            background-color: rgba(234, 176, 3, 0.2);
+            border: 4px solid #eab003;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .letterBox.active {
+            background-color: rgba(234, 176, 3, 0.4);
+            box-shadow: 0 0 30px rgba(234, 176, 3, 0.8);
+        }
+
+        .letterDisplay {
+            font-size: 48px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 10px rgba(234, 176, 3, 0.8);
+        }
+
+        .letterArrows {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            right: -40px;
+        }
+
+        .arrowBtn {
+            background-color: #eab003;
+            color: #000;
+            border: 2px solid #fff;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arrowBtn:hover {
+            background-color: #fff;
+        }
+
+        .nameEntryInstructions {
+            color: #eab003;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .submitButton {
+            background-color: #eab003;
+            color: #000;
+            border: 4px solid #fff;
+            padding: 15px 50px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin-top: 30px;
+            transition: all 0.3s;
+        }
+
+        .submitButton:hover {
+            background-color: #fff;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -202,15 +421,52 @@
     <div class="gameTitle hidden" id="gameTitle">MICROSISTEMAS: LA RUTA AL EVENTO</div>
 
     <div id="gameContainer">
+        <!-- High Scores Screen -->
+        <div id="highScoresScreen" class="hidden">
+            <div class="highScoresTitle">🏆 HIGH SCORES 🏆</div>
+            <div class="scoresTable" id="scoresTable"></div>
+            <button class="continueButton" onclick="showStartScreen()">JUGAR</button>
+        </div>
+
+        <!-- Name Entry Screen -->
+        <div id="nameEntryScreen" class="hidden">
+            <div class="nameEntryTitle">¡NUEVO RÉCORD!</div>
+            <div class="yourTimeDisplay">Tu tiempo: <span id="finalTimeDisplay"></span></div>
+            <div style="color: #eab003; font-size: 20px; margin-bottom: 20px;">Introduce tus iniciales:</div>
+
+            <div class="nameInputContainer">
+                <div class="letterBox active" id="letter0">
+                    <div class="letterDisplay" id="char0">A</div>
+                </div>
+                <div class="letterBox" id="letter1">
+                    <div class="letterDisplay" id="char1">A</div>
+                </div>
+                <div class="letterBox" id="letter2">
+                    <div class="letterDisplay" id="char2">A</div>
+                </div>
+            </div>
+
+            <div class="nameEntryInstructions">
+                ⌨️ Usa ↑/↓ para cambiar letra | ←/→ para mover cursor | ENTER para confirmar
+            </div>
+
+            <button class="submitButton" onclick="submitScore()">GUARDAR</button>
+        </div>
+
         <div id="startScreen" class="hidden">
             <img src="logo.png" alt="Microsistemas Logo" class="logoImg">
             <button class="startButton" onclick="startGame()">START</button>
+            <button class="startButton" onclick="showHighScores()" style="margin-top: 20px; font-size: 24px;">VER HIGH SCORES</button>
         </div>
 
         <canvas id="gameCanvas" width="800" height="600"></canvas>
 
+        <!-- Timer Display -->
+        <div id="timer" class="hidden">00:00</div>
+
         <div id="winScreen" class="hidden">
             <div class="winText">¡RUTA COMPLETADA!</div>
+            <div id="timeResult" style="color: #eab003; font-size: 32px; margin: 20px 0;"></div>
             <div class="invitationText">HAS SIDO 'LOGUEADO' PARA:</div>
             <div class="invitationText" style="font-size: 28px; margin: 20px 0;">
                 LA CENA DE FIN DE AÑO DE MICROSISTEMAS
@@ -239,6 +495,11 @@
         const gameTitle = document.getElementById('gameTitle');
         const introScreen = document.getElementById('introScreen');
         const introVideo = document.getElementById('introVideo');
+        const timerDisplay = document.getElementById('timer');
+        const highScoresScreen = document.getElementById('highScoresScreen');
+        const nameEntryScreen = document.getElementById('nameEntryScreen');
+        const scoresTable = document.getElementById('scoresTable');
+        const timeResult = document.getElementById('timeResult');
 
         // Load logo image
         const logoImage = new Image();
@@ -247,6 +508,63 @@
         // Audio contexts
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+        // Timer variables
+        let startTime = 0;
+        let timerInterval = null;
+        let finalTime = 0;
+
+        // Name entry variables
+        let currentLetterIndex = 0;
+        let playerName = ['A', 'A', 'A'];
+        const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ';
+
+        // High Scores Manager - Easy to switch to Firebase
+        const HighScoresManager = {
+            storageKey: 'microsistemas_highscores',
+            useFirebase: false, // Switch to true when Firebase is configured
+
+            // Get high scores from localStorage or Firebase
+            async getScores() {
+                if (this.useFirebase) {
+                    // TODO: Firebase implementation
+                    // return await fetchFromFirebase();
+                    return [];
+                } else {
+                    const scores = localStorage.getItem(this.storageKey);
+                    return scores ? JSON.parse(scores) : [];
+                }
+            },
+
+            // Save high scores to localStorage or Firebase
+            async saveScores(scores) {
+                if (this.useFirebase) {
+                    // TODO: Firebase implementation
+                    // await saveToFirebase(scores);
+                } else {
+                    localStorage.setItem(this.storageKey, JSON.stringify(scores));
+                }
+            },
+
+            // Add a new score and return if it's a high score
+            async addScore(name, time) {
+                const scores = await this.getScores();
+                scores.push({ name, time, date: new Date().toISOString() });
+                scores.sort((a, b) => a.time - b.time);
+                const top10 = scores.slice(0, 10);
+                await this.saveScores(top10);
+
+                const rank = top10.findIndex(s => s.name === name && s.time === time);
+                return rank !== -1 ? rank : -1;
+            },
+
+            // Check if time qualifies for top 10
+            async isHighScore(time) {
+                const scores = await this.getScores();
+                if (scores.length < 10) return true;
+                return time < scores[9].time;
+            }
+        };
+
         // Intro video handlers
         introVideo.addEventListener('ended', function() {
             skipIntro();
@@ -254,7 +572,161 @@
 
         function skipIntro() {
             introScreen.classList.add('hidden');
+            showHighScores();
+        }
+
+        // Timer functions
+        function startTimer() {
+            startTime = Date.now();
+            timerDisplay.classList.remove('hidden');
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function updateTimer() {
+            const elapsed = Date.now() - startTime;
+            const seconds = Math.floor(elapsed / 1000);
+            const milliseconds = Math.floor((elapsed % 1000) / 100);
+            timerDisplay.textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}.${milliseconds}`;
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            finalTime = Date.now() - startTime;
+            return finalTime;
+        }
+
+        function formatTime(milliseconds) {
+            const seconds = Math.floor(milliseconds / 1000);
+            const ms = Math.floor((milliseconds % 1000) / 10);
+            return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+        }
+
+        // High Scores Display
+        async function showHighScores() {
+            const scores = await HighScoresManager.getScores();
+            highScoresScreen.classList.remove('hidden');
+            startScreen.classList.add('hidden');
+            nameEntryScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
+
+            renderHighScores(scores);
+        }
+
+        function renderHighScores(scores, newScoreIndex = -1) {
+            scoresTable.innerHTML = '';
+
+            if (scores.length === 0) {
+                scoresTable.innerHTML = '<div style="color: #eab003; padding: 20px;">No hay récords todavía. ¡Sé el primero!</div>';
+                return;
+            }
+
+            scores.forEach((score, index) => {
+                const row = document.createElement('div');
+                row.className = 'scoreRow' + (index === newScoreIndex ? ' newScore' : '');
+                row.innerHTML = `
+                    <div class="scoreRank">#${index + 1}</div>
+                    <div class="scoreName">${score.name}</div>
+                    <div class="scoreTime">${formatTime(score.time)}</div>
+                `;
+                scoresTable.appendChild(row);
+            });
+        }
+
+        function showStartScreen() {
+            highScoresScreen.classList.add('hidden');
             startScreen.classList.remove('hidden');
+        }
+
+        // Name Entry System
+        function showNameEntry() {
+            nameEntryScreen.classList.remove('hidden');
+            winScreen.classList.add('hidden');
+            currentLetterIndex = 0;
+            playerName = ['A', 'A', 'A'];
+            updateNameDisplay();
+            document.getElementById('finalTimeDisplay').textContent = formatTime(finalTime);
+        }
+
+        function updateNameDisplay() {
+            for (let i = 0; i < 3; i++) {
+                document.getElementById(`char${i}`).textContent = playerName[i];
+                document.getElementById(`letter${i}`).classList.toggle('active', i === currentLetterIndex);
+            }
+        }
+
+        function changeLetter(direction) {
+            const currentChar = playerName[currentLetterIndex];
+            let currentIndex = LETTERS.indexOf(currentChar);
+            currentIndex += direction;
+
+            if (currentIndex < 0) currentIndex = LETTERS.length - 1;
+            if (currentIndex >= LETTERS.length) currentIndex = 0;
+
+            playerName[currentLetterIndex] = LETTERS[currentIndex];
+            updateNameDisplay();
+            playSound(600, 0.05, 'square');
+        }
+
+        function moveLetterCursor(direction) {
+            currentLetterIndex += direction;
+            if (currentLetterIndex < 0) currentLetterIndex = 2;
+            if (currentLetterIndex > 2) currentLetterIndex = 0;
+            updateNameDisplay();
+            playSound(800, 0.05, 'square');
+        }
+
+        async function submitScore() {
+            const name = playerName.join('');
+            const rank = await HighScoresManager.addScore(name, finalTime);
+            nameEntryActive = false;
+
+            playWinSound();
+
+            // Show high scores with the new entry highlighted
+            const scores = await HighScoresManager.getScores();
+            nameEntryScreen.classList.add('hidden');
+            highScoresScreen.classList.remove('hidden');
+            renderHighScores(scores, rank);
+
+            // After 5 seconds, show invitation
+            setTimeout(() => {
+                timeResult.textContent = `Tiempo: ${formatTime(finalTime)}`;
+                winScreen.classList.remove('hidden');
+                highScoresScreen.classList.add('hidden');
+            }, 5000);
+        }
+
+        // Handle name entry keyboard input
+        let nameEntryActive = false;
+
+        function handleNameEntryInput(e) {
+            if (!nameEntryActive) return;
+
+            switch(e.key) {
+                case 'ArrowUp':
+                    changeLetter(1);
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    changeLetter(-1);
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                    moveLetterCursor(-1);
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    moveLetterCursor(1);
+                    e.preventDefault();
+                    break;
+                case 'Enter':
+                    submitScore();
+                    e.preventDefault();
+                    break;
+            }
         }
 
         // Game constants
@@ -637,27 +1109,53 @@
             player.y = 1;
         }
 
-        function winGame() {
+        async function winGame() {
             gameRunning = false;
             stopBackgroundMusic();
+            const time = stopTimer();
+            timerDisplay.classList.add('hidden');
+
+            // Hide game elements
+            gameTitle.classList.add('hidden');
+            instructions.classList.add('hidden');
+
             playWinSound();
 
             // Fade out
             let opacity = 1;
-            const fadeOut = setInterval(() => {
+            const fadeOut = setInterval(async () => {
                 opacity -= 0.05;
                 ctx.fillStyle = `rgba(0, 0, 0, ${1 - opacity})`;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
                 if (opacity <= 0) {
                     clearInterval(fadeOut);
-                    winScreen.classList.remove('hidden');
+
+                    // Check if it's a high score
+                    const isHighScore = await HighScoresManager.isHighScore(time);
+
+                    if (isHighScore) {
+                        // Show name entry screen
+                        nameEntryActive = true;
+                        showNameEntry();
+                    } else {
+                        // Show win screen directly
+                        timeResult.textContent = `Tiempo: ${formatTime(time)}`;
+                        winScreen.classList.remove('hidden');
+                    }
                 }
             }, 50);
         }
 
-        // Input handling
+        // Input handling - Combined for game and name entry
         document.addEventListener('keydown', (e) => {
+            // Handle name entry input
+            if (nameEntryActive) {
+                handleNameEntryInput(e);
+                return;
+            }
+
+            // Handle game input
             if (!gameRunning) return;
 
             let newX = player.x;
@@ -721,14 +1219,17 @@
         // Start game
         function startGame() {
             startScreen.classList.add('hidden');
+            highScoresScreen.classList.add('hidden');
             gameTitle.classList.remove('hidden');
             instructions.classList.remove('hidden');
+            nameEntryActive = false;
             gameRunning = true;
 
             generateMaze();
             initEnemies();
             resetPlayer();
 
+            startTimer();
             startBackgroundMusic();
             requestAnimationFrame(gameLoop);
         }
