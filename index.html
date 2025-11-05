@@ -138,14 +138,72 @@
         .gameTitle.hidden, .instructions.hidden {
             display: none;
         }
+
+        #introScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #introScreen.hidden {
+            display: none;
+        }
+
+        #introVideo {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+
+        .logoImg {
+            max-width: 400px;
+            margin-bottom: 40px;
+            filter: drop-shadow(0 0 20px rgba(234, 176, 3, 0.5));
+        }
+
+        .skipIntro {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            background-color: rgba(234, 176, 3, 0.8);
+            color: #000;
+            border: 2px solid #fff;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .skipIntro:hover {
+            background-color: #fff;
+            border-color: #eab003;
+        }
     </style>
 </head>
 <body>
+    <!-- Intro Video Screen -->
+    <div id="introScreen">
+        <video id="introVideo" autoplay muted>
+            <source src="intro.mp4" type="video/mp4">
+        </video>
+        <button class="skipIntro" onclick="skipIntro()">SALTAR ►</button>
+    </div>
+
     <div class="gameTitle hidden" id="gameTitle">MICROSISTEMAS: LA RUTA AL EVENTO</div>
 
     <div id="gameContainer">
-        <div id="startScreen">
-            <div class="logo">MICROSISTEMAS</div>
+        <div id="startScreen" class="hidden">
+            <img src="logo.png" alt="Microsistemas Logo" class="logoImg">
             <button class="startButton" onclick="startGame()">START</button>
         </div>
 
@@ -179,9 +237,25 @@
         const winScreen = document.getElementById('winScreen');
         const instructions = document.getElementById('instructions');
         const gameTitle = document.getElementById('gameTitle');
+        const introScreen = document.getElementById('introScreen');
+        const introVideo = document.getElementById('introVideo');
+
+        // Load logo image
+        const logoImage = new Image();
+        logoImage.src = 'logo.png';
 
         // Audio contexts
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Intro video handlers
+        introVideo.addEventListener('ended', function() {
+            skipIntro();
+        });
+
+        function skipIntro() {
+            introScreen.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        }
 
         // Game constants
         const TILE_SIZE = 20;
@@ -484,44 +558,25 @@
             ctx.lineWidth = 3;
             ctx.strokeRect(x + 2, y + 2, width - 4, height - 4);
 
-            // Draw larger MS logo circle
-            ctx.save();
-            ctx.translate(centerX, centerY);
-            ctx.scale(pulseScale, pulseScale);
+            // Draw logo image with pulsing effect
+            if (logoImage.complete) {
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.scale(pulseScale, pulseScale);
+                ctx.shadowColor = COLORS.goal;
+                ctx.shadowBlur = 20;
 
-            // Outer decorative circle
-            ctx.beginPath();
-            ctx.arc(0, 0, 28, 0, Math.PI * 2);
-            ctx.strokeStyle = COLORS.goal;
-            ctx.lineWidth = 4;
-            ctx.stroke();
+                // Calculate logo size to fit in the goal area
+                const logoSize = 60;
+                ctx.drawImage(logoImage, -logoSize / 2, -logoSize / 2, logoSize, logoSize);
 
-            // Inner circle
-            ctx.beginPath();
-            ctx.arc(0, 0, 22, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(234, 176, 3, 0.3)';
-            ctx.fill();
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = 2;
-            ctx.stroke();
-
-            // Draw MICROSISTEMAS text
-            ctx.font = 'bold 11px monospace';
-            ctx.fillStyle = '#fff';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.shadowColor = COLORS.goal;
-            ctx.shadowBlur = 10;
-
-            // Split text into two lines
-            ctx.fillText('MICRO', 0, -6);
-            ctx.fillText('SISTEMAS', 0, 6);
-
-            ctx.restore();
+                ctx.restore();
+            }
 
             // Draw corner decorations
             const cornerSize = 8;
             ctx.fillStyle = COLORS.goal;
+            ctx.shadowBlur = 0;
             // Top-left
             ctx.fillRect(x + 5, y + 5, cornerSize, 2);
             ctx.fillRect(x + 5, y + 5, 2, cornerSize);
