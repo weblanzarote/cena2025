@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsistemas: La Ruta al Evento</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 800px;
+            height: 600px;
+        }
+
+        #gameCanvas {
+            border: 3px solid #eab003;
+            background-color: #000;
+            display: block;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        #startScreen, #winScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+        }
+
+        #startScreen.hidden, #winScreen.hidden {
+            display: none;
+        }
+
+        .logo {
+            font-size: 48px;
+            font-weight: bold;
+            color: #eab003;
+            text-shadow:
+                3px 3px 0 #000,
+                -1px -1px 0 #fff,
+                1px -1px 0 #fff,
+                -1px 1px 0 #fff,
+                1px 1px 0 #fff;
+            margin-bottom: 40px;
+            letter-spacing: 4px;
+        }
+
+        .startButton {
+            background-color: #eab003;
+            color: #000;
+            border: 4px solid #fff;
+            padding: 20px 60px;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 8px 0 #fff;
+            transition: all 0.1s;
+        }
+
+        .startButton:hover {
+            background-color: #fff;
+            color: #000;
+            border-color: #eab003;
+            box-shadow: 0 8px 0 #eab003;
+        }
+
+        .startButton:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #eab003;
+        }
+
+        .winText {
+            color: #eab003;
+            font-size: 36px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 0 #fff;
+        }
+
+        .invitationText {
+            color: #fff;
+            font-size: 20px;
+            line-height: 1.8;
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            color: #eab003;
+            font-weight: bold;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #eab003;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="startScreen">
+            <div class="logo">MICROSISTEMAS</div>
+            <button class="startButton" onclick="startGame()">START</button>
+        </div>
+
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div id="winScreen" class="hidden">
+            <div class="winText">¡RUTA COMPLETADA!</div>
+            <div class="invitationText">HAS SIDO 'LOGUEADO' PARA:</div>
+            <div class="invitationText" style="font-size: 28px; margin: 20px 0;">
+                LA CENA DE FIN DE AÑO DE MICROSISTEMAS
+            </div>
+            <div class="invitationText"><span class="highlight">FECHA:</span> [31 de Diciembre, 2025]</div>
+            <div class="invitationText"><span class="highlight">HORA:</span> [20:00 hrs]</div>
+            <div class="invitationText"><span class="highlight">LUGAR:</span> [Tu Dirección Aquí]</div>
+            <div class="invitationText"><span class="highlight">DRESS CODE:</span> 80s / Retro-Tech</div>
+            <div class="invitationText" style="margin-top: 30px; font-size: 24px; color: #eab003;">
+                ¡Te esperamos!
+            </div>
+        </div>
+
+        <div class="instructions" id="instructions" style="display: none;">
+            USA LAS FLECHAS ← ↑ → ↓ PARA MOVERTE | EVITA LOS VIRUS
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const winScreen = document.getElementById('winScreen');
+        const instructions = document.getElementById('instructions');
+
+        // Audio contexts
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Game constants
+        const TILE_SIZE = 20;
+        const COLS = 40;
+        const ROWS = 30;
+
+        // Colors
+        const COLORS = {
+            wall: '#0a4d0a',
+            path: '#eab003',
+            player: '#ffffff',
+            enemy: '#ff0000',
+            goal: '#eab003',
+            trace: '#d4a002'
+        };
+
+        // Game state
+        let gameRunning = false;
+        let player = { x: 1, y: 1 };
+        let enemies = [];
+        let maze = [];
+        let goalPosition = { x: 38, y: 28 };
+
+        // Create a complex maze
+        function generateMaze() {
+            // Initialize with walls
+            maze = Array(ROWS).fill().map(() => Array(COLS).fill(1));
+
+            // Create paths manually for a good maze experience
+            const paths = [
+                // Horizontal paths
+                [[1, 1], [1, 8]],
+                [[1, 10], [1, 15]],
+                [[1, 17], [1, 25]],
+                [[1, 27], [1, 38]],
+                [[3, 3], [3, 12]],
+                [[3, 14], [3, 20]],
+                [[3, 22], [3, 35]],
+                [[5, 1], [5, 7]],
+                [[5, 9], [5, 18]],
+                [[5, 20], [5, 30]],
+                [[5, 32], [5, 38]],
+                [[7, 5], [7, 15]],
+                [[7, 17], [7, 25]],
+                [[7, 27], [7, 33]],
+                [[9, 1], [9, 10]],
+                [[9, 12], [9, 22]],
+                [[9, 24], [9, 38]],
+                [[11, 3], [11, 8]],
+                [[11, 10], [11, 18]],
+                [[11, 20], [11, 28]],
+                [[11, 30], [11, 36]],
+                [[13, 1], [13, 12]],
+                [[13, 14], [13, 25]],
+                [[13, 27], [13, 38]],
+                [[15, 5], [15, 10]],
+                [[15, 12], [15, 20]],
+                [[15, 22], [15, 32]],
+                [[17, 1], [17, 15]],
+                [[17, 17], [17, 28]],
+                [[17, 30], [17, 38]],
+                [[19, 3], [19, 10]],
+                [[19, 12], [19, 23]],
+                [[19, 25], [19, 35]],
+                [[21, 1], [21, 8]],
+                [[21, 10], [21, 18]],
+                [[21, 20], [21, 30]],
+                [[21, 32], [21, 38]],
+                [[23, 5], [23, 13]],
+                [[23, 15], [23, 25]],
+                [[23, 27], [23, 33]],
+                [[25, 1], [25, 10]],
+                [[25, 12], [25, 20]],
+                [[25, 22], [25, 38]],
+                [[27, 3], [27, 15]],
+                [[27, 17], [27, 28]],
+                [[27, 30], [27, 35]],
+                [[28, 1], [28, 38]],
+
+                // Vertical connections
+                [[1, 1], [9, 1]],
+                [[1, 5], [7, 5]],
+                [[1, 10], [5, 10]],
+                [[3, 3], [11, 3]],
+                [[5, 7], [13, 7]],
+                [[3, 12], [13, 12]],
+                [[1, 15], [15, 15]],
+                [[5, 18], [19, 18]],
+                [[3, 20], [13, 20]],
+                [[7, 25], [19, 25]],
+                [[1, 27], [13, 27]],
+                [[5, 30], [21, 30]],
+                [[3, 35], [27, 35]],
+                [[1, 38], [28, 38]],
+                [[13, 1], [25, 1]],
+                [[11, 8], [21, 8]],
+                [[17, 10], [25, 10]],
+                [[19, 23], [27, 23]],
+                [[11, 28], [27, 28]]
+            ];
+
+            // Draw all paths
+            paths.forEach(([[row1, col1], [row2, col2]]) => {
+                if (row1 === row2) {
+                    // Horizontal path
+                    for (let c = Math.min(col1, col2); c <= Math.max(col1, col2); c++) {
+                        if (row1 >= 0 && row1 < ROWS && c >= 0 && c < COLS) {
+                            maze[row1][c] = 0;
+                        }
+                    }
+                } else {
+                    // Vertical path
+                    for (let r = Math.min(row1, row2); r <= Math.max(row1, row2); r++) {
+                        if (r >= 0 && r < ROWS && col1 >= 0 && col1 < COLS) {
+                            maze[r][col1] = 0;
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize enemies
+        function initEnemies() {
+            enemies = [
+                { x: 10, y: 3, dx: 1, dy: 0, path: 'horizontal', bounds: { minX: 3, maxX: 12, y: 3 } },
+                { x: 15, y: 7, dx: 0, dy: 1, path: 'vertical', bounds: { x: 15, minY: 5, maxY: 15 } },
+                { x: 18, y: 19, dx: -1, dy: 0, path: 'horizontal', bounds: { minX: 12, maxX: 23, y: 19 } },
+                { x: 30, y: 21, dx: 0, dy: -1, path: 'vertical', bounds: { x: 30, minY: 10, maxY: 21 } }
+            ];
+        }
+
+        // Sound effects
+        function playSound(frequency, duration, type = 'sine') {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playZapSound() {
+            playSound(200, 0.1, 'square');
+            setTimeout(() => playSound(100, 0.1, 'square'), 50);
+        }
+
+        function playWinSound() {
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((note, i) => {
+                setTimeout(() => playSound(note, 0.3), i * 150);
+            });
+        }
+
+        function playMoveSound() {
+            playSound(800, 0.02, 'square');
+        }
+
+        // Background music (simple looping melody)
+        let musicInterval;
+        function startBackgroundMusic() {
+            const melody = [
+                { freq: 261.63, dur: 200 },
+                { freq: 293.66, dur: 200 },
+                { freq: 329.63, dur: 200 },
+                { freq: 349.23, dur: 200 },
+                { freq: 392.00, dur: 400 },
+                { freq: 349.23, dur: 200 },
+                { freq: 329.63, dur: 400 }
+            ];
+
+            let noteIndex = 0;
+            function playNextNote() {
+                if (!gameRunning) return;
+                const note = melody[noteIndex];
+                playSound(note.freq, note.dur / 1000, 'triangle');
+                noteIndex = (noteIndex + 1) % melody.length;
+                musicInterval = setTimeout(playNextNote, note.dur + 100);
+            }
+            playNextNote();
+        }
+
+        function stopBackgroundMusic() {
+            if (musicInterval) {
+                clearTimeout(musicInterval);
+            }
+        }
+
+        // Draw functions
+        function drawMaze() {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    if (maze[row][col] === 1) {
+                        // Wall - PCB style
+                        ctx.fillStyle = COLORS.wall;
+                        ctx.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+                        // Add circuit-like details
+                        if (Math.random() > 0.7) {
+                            ctx.strokeStyle = '#0d5e0d';
+                            ctx.lineWidth = 1;
+                            ctx.beginPath();
+                            ctx.moveTo(col * TILE_SIZE, row * TILE_SIZE + TILE_SIZE / 2);
+                            ctx.lineTo(col * TILE_SIZE + TILE_SIZE, row * TILE_SIZE + TILE_SIZE / 2);
+                            ctx.stroke();
+                        }
+                    } else {
+                        // Path - copper trace style
+                        ctx.fillStyle = COLORS.trace;
+                        ctx.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+
+                        // Add metallic shine effect
+                        ctx.fillStyle = COLORS.path;
+                        ctx.fillRect(col * TILE_SIZE + 2, row * TILE_SIZE + 2, TILE_SIZE - 4, TILE_SIZE - 4);
+                    }
+                }
+            }
+        }
+
+        function drawPlayer() {
+            ctx.fillStyle = COLORS.player;
+            ctx.shadowColor = COLORS.player;
+            ctx.shadowBlur = 10;
+            ctx.fillRect(
+                player.x * TILE_SIZE + 6,
+                player.y * TILE_SIZE + 6,
+                8,
+                8
+            );
+            ctx.shadowBlur = 0;
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                // Draw virus/bug sprite (8-bit style)
+                ctx.fillStyle = COLORS.enemy;
+                ctx.shadowColor = COLORS.enemy;
+                ctx.shadowBlur = 8;
+
+                const centerX = enemy.x * TILE_SIZE + TILE_SIZE / 2;
+                const centerY = enemy.y * TILE_SIZE + TILE_SIZE / 2;
+
+                // Draw a simple skull/virus shape
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Eyes
+                ctx.fillStyle = '#000';
+                ctx.fillRect(centerX - 3, centerY - 2, 2, 2);
+                ctx.fillRect(centerX + 1, centerY - 2, 2, 2);
+
+                // Spikes
+                ctx.fillStyle = COLORS.enemy;
+                ctx.fillRect(centerX - 7, centerY, 2, 2);
+                ctx.fillRect(centerX + 5, centerY, 2, 2);
+                ctx.fillRect(centerX, centerY - 7, 2, 2);
+                ctx.fillRect(centerX, centerY + 5, 2, 2);
+
+                ctx.shadowBlur = 0;
+            });
+        }
+
+        function drawGoal() {
+            const x = goalPosition.x * TILE_SIZE;
+            const y = goalPosition.y * TILE_SIZE;
+
+            // Draw MS logo (laurel wreath style)
+            ctx.fillStyle = COLORS.goal;
+            ctx.shadowColor = COLORS.goal;
+            ctx.shadowBlur = 15;
+
+            // Draw a simple wreath circle
+            ctx.beginPath();
+            ctx.arc(x + TILE_SIZE / 2, y + TILE_SIZE / 2, 8, 0, Math.PI * 2);
+            ctx.strokeStyle = COLORS.goal;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw MS letters
+            ctx.font = 'bold 8px monospace';
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('MS', x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+
+            ctx.shadowBlur = 0;
+        }
+
+        // Game logic
+        function moveEnemies() {
+            enemies.forEach(enemy => {
+                if (enemy.path === 'horizontal') {
+                    enemy.x += enemy.dx;
+                    if (enemy.x <= enemy.bounds.minX || enemy.x >= enemy.bounds.maxX) {
+                        enemy.dx *= -1;
+                    }
+                } else {
+                    enemy.y += enemy.dy;
+                    if (enemy.y <= enemy.bounds.minY || enemy.y >= enemy.bounds.maxY) {
+                        enemy.dy *= -1;
+                    }
+                }
+            });
+        }
+
+        function checkCollisions() {
+            // Check enemy collision
+            enemies.forEach(enemy => {
+                if (Math.abs(player.x - enemy.x) < 1 && Math.abs(player.y - enemy.y) < 1) {
+                    playZapSound();
+                    flashScreen();
+                    resetPlayer();
+                }
+            });
+
+            // Check goal collision
+            if (player.x === goalPosition.x && player.y === goalPosition.y) {
+                winGame();
+            }
+        }
+
+        function flashScreen() {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function resetPlayer() {
+            player.x = 1;
+            player.y = 1;
+        }
+
+        function winGame() {
+            gameRunning = false;
+            stopBackgroundMusic();
+            playWinSound();
+
+            // Fade out
+            let opacity = 1;
+            const fadeOut = setInterval(() => {
+                opacity -= 0.05;
+                ctx.fillStyle = `rgba(0, 0, 0, ${1 - opacity})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (opacity <= 0) {
+                    clearInterval(fadeOut);
+                    winScreen.classList.remove('hidden');
+                }
+            }, 50);
+        }
+
+        // Input handling
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) return;
+
+            let newX = player.x;
+            let newY = player.y;
+
+            switch(e.key) {
+                case 'ArrowUp':
+                    newY--;
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    newY++;
+                    e.preventDefault();
+                    break;
+                case 'ArrowLeft':
+                    newX--;
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    newX++;
+                    e.preventDefault();
+                    break;
+                default:
+                    return;
+            }
+
+            // Check bounds and walls
+            if (newX >= 0 && newX < COLS && newY >= 0 && newY < ROWS && maze[newY][newX] === 0) {
+                player.x = newX;
+                player.y = newY;
+                playMoveSound();
+            }
+        });
+
+        // Game loop
+        let lastEnemyMove = 0;
+        function gameLoop(timestamp) {
+            if (!gameRunning) return;
+
+            // Move enemies every 500ms
+            if (timestamp - lastEnemyMove > 500) {
+                moveEnemies();
+                lastEnemyMove = timestamp;
+            }
+
+            // Draw everything
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawMaze();
+            drawGoal();
+            drawEnemies();
+            drawPlayer();
+
+            checkCollisions();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start game
+        function startGame() {
+            startScreen.classList.add('hidden');
+            instructions.style.display = 'block';
+            gameRunning = true;
+
+            generateMaze();
+            initEnemies();
+            resetPlayer();
+
+            startBackgroundMusic();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize
+        generateMaze();
+    </script>
+</body>
+</html>
