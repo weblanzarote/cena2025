@@ -407,6 +407,122 @@
             background-color: #fff;
             transform: scale(1.05);
         }
+
+        /* Mobile Controls */
+        #mobileControls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 100;
+        }
+
+        #mobileControls.visible {
+            display: block;
+        }
+
+        .dpad-container {
+            position: relative;
+            width: 180px;
+            height: 180px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 50%;
+            border: 3px solid rgba(234, 176, 3, 0.5);
+        }
+
+        .dpad-button {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background-color: rgba(234, 176, 3, 0.8);
+            border: 3px solid #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: #000;
+            user-select: none;
+            -webkit-user-select: none;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .dpad-button:active {
+            background-color: #fff;
+            transform: scale(0.95);
+        }
+
+        .dpad-button.up {
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dpad-button.down {
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 0 0 8px 8px;
+        }
+
+        .dpad-button.left {
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 8px 0 0 8px;
+        }
+
+        .dpad-button.right {
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Center circle for aesthetics */
+        .dpad-center {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: rgba(234, 176, 3, 0.3);
+            border: 2px solid rgba(234, 176, 3, 0.5);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #gameContainer {
+                width: 100%;
+                max-width: 800px;
+                height: auto;
+                aspect-ratio: 4/3;
+            }
+
+            #gameCanvas {
+                width: 100%;
+                height: auto;
+            }
+
+            .instructions {
+                width: 100%;
+                font-size: 14px;
+            }
+
+            .gameTitle {
+                font-size: 16px;
+            }
+
+            #timer {
+                font-size: 18px;
+                padding: 8px 15px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -483,7 +599,18 @@
 
     <div class="instructions hidden" id="instructions">
         <div>🎯 <strong>OBJETIVO:</strong> Encuentra el logo de MICROSISTEMAS al final del laberinto</div>
-        <div style="margin-top: 8px;">⌨️ Usa las flechas <strong>← ↑ → ↓</strong> para moverte | 🦠 Evita los virus rojos</div>
+        <div style="margin-top: 8px;"><span id="controlsHint">⌨️ Usa las flechas <strong>← ↑ → ↓</strong> para moverte</span> | 🦠 Evita los virus rojos</div>
+    </div>
+
+    <!-- Mobile Touch Controls -->
+    <div id="mobileControls">
+        <div class="dpad-container">
+            <div class="dpad-button up" id="btnUp">▲</div>
+            <div class="dpad-button down" id="btnDown">▼</div>
+            <div class="dpad-button left" id="btnLeft">◄</div>
+            <div class="dpad-button right" id="btnRight">►</div>
+            <div class="dpad-center"></div>
+        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -547,6 +674,115 @@
         let currentLetterIndex = 0;
         let playerName = ['A', 'A', 'A'];
         const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ';
+
+        // Mobile controls
+        const mobileControls = document.getElementById('mobileControls');
+        const controlsHint = document.getElementById('controlsHint');
+        let currentDirection = null;
+        let moveInterval = null;
+
+        // Detect if device is mobile/touch
+        function isTouchDevice() {
+            return (('ontouchstart' in window) ||
+                   (navigator.maxTouchPoints > 0) ||
+                   (navigator.msMaxTouchPoints > 0));
+        }
+
+        // Show mobile controls if touch device
+        if (isTouchDevice()) {
+            mobileControls.classList.add('visible');
+            if (controlsHint) {
+                controlsHint.innerHTML = '📱 Usa el D-pad para moverte';
+            }
+        }
+
+        // Mobile control functions
+        function movePlayer(direction) {
+            if (!gameRunning) return;
+
+            let newX = player.x;
+            let newY = player.y;
+
+            switch(direction) {
+                case 'up':
+                    newY--;
+                    break;
+                case 'down':
+                    newY++;
+                    break;
+                case 'left':
+                    newX--;
+                    break;
+                case 'right':
+                    newX++;
+                    break;
+            }
+
+            // Check bounds and walls
+            if (newX >= 0 && newX < COLS && newY >= 0 && newY < ROWS && maze[newY][newX] === 0) {
+                player.x = newX;
+                player.y = newY;
+                playMoveSound();
+            }
+        }
+
+        // Setup mobile control buttons
+        function setupMobileControls() {
+            const buttons = {
+                btnUp: 'up',
+                btnDown: 'down',
+                btnLeft: 'left',
+                btnRight: 'right'
+            };
+
+            Object.keys(buttons).forEach(btnId => {
+                const btn = document.getElementById(btnId);
+                const direction = buttons[btnId];
+
+                // Touch start - begin movement
+                btn.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    currentDirection = direction;
+                    movePlayer(direction);
+
+                    // Continue moving while held
+                    moveInterval = setInterval(() => {
+                        if (currentDirection === direction) {
+                            movePlayer(direction);
+                        }
+                    }, 150);
+                });
+
+                // Touch end - stop movement
+                btn.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    currentDirection = null;
+                    if (moveInterval) {
+                        clearInterval(moveInterval);
+                        moveInterval = null;
+                    }
+                });
+
+                // Touch cancel - stop movement
+                btn.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    currentDirection = null;
+                    if (moveInterval) {
+                        clearInterval(moveInterval);
+                        moveInterval = null;
+                    }
+                });
+
+                // Mouse events for desktop testing
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    movePlayer(direction);
+                });
+            });
+        }
+
+        // Initialize mobile controls
+        setupMobileControls();
 
         // High Scores Manager - Supports both localStorage and Firebase
         const HighScoresManager = {
