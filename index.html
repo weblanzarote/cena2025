@@ -164,6 +164,29 @@
             border-color: #eab003;
         }
 
+        .playIntro {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #eab003;
+            color: #000;
+            border: 4px solid #fff;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .playIntro:hover {
+            background-color: #fff;
+            border-color: #eab003;
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+
         /* Timer Display */
         #timer {
             color: #eab003;
@@ -661,10 +684,11 @@
 <body>
     <!-- Intro Video Screen -->
     <div id="introScreen">
-        <video id="introVideo" autoplay muted>
+        <video id="introVideo" autoplay muted playsinline>
             <source src="intro.mp4" type="video/mp4">
         </video>
         <button class="skipIntro" onclick="skipIntro()">SALTAR ►</button>
+        <button class="playIntro" id="playIntro" onclick="playIntro()" style="display: none;">▶ REPRODUCIR VÍDEO</button>
     </div>
 
     <div class="gameTitle hidden" id="gameTitle">CONSIGUE TU INVITACIÓN</div>
@@ -1071,11 +1095,74 @@
         };
 
         // Intro video handlers
+        const playIntroBtn = document.getElementById('playIntro');
+        let videoLoadTimeout;
+        let videoHasPlayed = false;
+
+        // Handle video ended
         introVideo.addEventListener('ended', function() {
+            videoHasPlayed = true;
             skipIntro();
         });
 
+        // Handle video playing successfully
+        introVideo.addEventListener('playing', function() {
+            videoHasPlayed = true;
+            playIntroBtn.style.display = 'none';
+            if (videoLoadTimeout) {
+                clearTimeout(videoLoadTimeout);
+            }
+        });
+
+        // Handle video load errors
+        introVideo.addEventListener('error', function(e) {
+            console.warn('Video failed to load:', e);
+            showPlayButton();
+        });
+
+        // Handle video stall
+        introVideo.addEventListener('stalled', function() {
+            console.warn('Video stalled');
+            showPlayButton();
+        });
+
+        // Detect if video doesn't autoplay (iOS restriction)
+        introVideo.addEventListener('loadedmetadata', function() {
+            // Give the video 1 second to start playing
+            videoLoadTimeout = setTimeout(function() {
+                if (!videoHasPlayed && introVideo.paused) {
+                    console.warn('Video autoplay blocked, showing play button');
+                    showPlayButton();
+                }
+            }, 1000);
+        });
+
+        // Fallback: If video doesn't play within 3 seconds of page load, show play button
+        setTimeout(function() {
+            if (!videoHasPlayed && !introScreen.classList.contains('hidden')) {
+                console.warn('Video did not start after 3 seconds, showing play button');
+                showPlayButton();
+            }
+        }, 3000);
+
+        function showPlayButton() {
+            playIntroBtn.style.display = 'block';
+        }
+
+        function playIntro() {
+            playIntroBtn.style.display = 'none';
+            introVideo.play().catch(function(error) {
+                console.error('Failed to play video:', error);
+                // If manual play also fails, skip to game
+                alert('No se pudo reproducir el vídeo. Continuando al juego...');
+                skipIntro();
+            });
+        }
+
         function skipIntro() {
+            if (videoLoadTimeout) {
+                clearTimeout(videoLoadTimeout);
+            }
             introScreen.classList.add('hidden');
             showHighScores();
         }
