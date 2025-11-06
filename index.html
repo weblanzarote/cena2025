@@ -354,6 +354,7 @@
             justify-content: center;
             align-items: center;
             position: relative;
+            cursor: pointer;
         }
 
         .letterBox.active {
@@ -366,6 +367,30 @@
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 10px rgba(234, 176, 3, 0.8);
+            pointer-events: none;
+        }
+
+        .hiddenInput {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border: none;
+            background: transparent;
+            font-size: 48px;
+            text-align: center;
+            color: transparent;
+            caret-color: transparent;
+            pointer-events: none;
+        }
+
+        /* Make inputs accessible on mobile */
+        @media (max-width: 768px) {
+            .hiddenInput {
+                pointer-events: auto;
+            }
         }
 
         .letterArrows {
@@ -711,18 +736,21 @@
             <div style="color: #eab003; font-size: 20px; margin-bottom: 20px;">Introduce tus iniciales:</div>
 
             <div class="nameInputContainer">
-                <div class="letterBox active" id="letter0">
+                <div class="letterBox active" id="letter0" onclick="focusLetterInput(0)">
                     <div class="letterDisplay" id="char0">A</div>
+                    <input type="text" class="hiddenInput" id="input0" maxlength="1" autocomplete="off" />
                 </div>
-                <div class="letterBox" id="letter1">
+                <div class="letterBox" id="letter1" onclick="focusLetterInput(1)">
                     <div class="letterDisplay" id="char1">A</div>
+                    <input type="text" class="hiddenInput" id="input1" maxlength="1" autocomplete="off" />
                 </div>
-                <div class="letterBox" id="letter2">
+                <div class="letterBox" id="letter2" onclick="focusLetterInput(2)">
                     <div class="letterDisplay" id="char2">A</div>
+                    <input type="text" class="hiddenInput" id="input2" maxlength="1" autocomplete="off" />
                 </div>
             </div>
 
-            <div class="nameEntryInstructions">
+            <div class="nameEntryInstructions" id="nameEntryInstructions">
                 ⌨️ Usa ↑/↓ para cambiar letra | ←/→ para mover cursor | ENTER para confirmar
             </div>
 
@@ -1241,12 +1269,79 @@
             updateNameDisplay();
             document.getElementById('finalTimeDisplay').textContent = formatTime(finalTime);
             showMobileControls();
+
+            // Update instructions for mobile
+            const instructionsEl = document.getElementById('nameEntryInstructions');
+            if (isMobile && instructionsEl) {
+                instructionsEl.innerHTML = '📱 Haz clic en cada letra para escribir';
+            }
+
+            // Setup mobile input handlers
+            setupMobileNameInputs();
         }
 
         function updateNameDisplay() {
             for (let i = 0; i < 3; i++) {
                 document.getElementById(`char${i}`).textContent = playerName[i];
                 document.getElementById(`letter${i}`).classList.toggle('active', i === currentLetterIndex);
+                // Also update hidden input values
+                const input = document.getElementById(`input${i}`);
+                if (input) {
+                    input.value = playerName[i];
+                }
+            }
+        }
+
+        // Mobile-friendly letter input
+        function focusLetterInput(index) {
+            if (!isMobile) return; // Only on mobile
+
+            currentLetterIndex = index;
+            updateNameDisplay();
+
+            const input = document.getElementById(`input${index}`);
+            if (input) {
+                input.focus();
+                // Select all text so typing replaces it
+                input.select();
+            }
+        }
+
+        function setupMobileNameInputs() {
+            if (!isMobile) return;
+
+            for (let i = 0; i < 3; i++) {
+                const input = document.getElementById(`input${i}`);
+                if (!input) continue;
+
+                // Remove old listeners if any
+                input.replaceWith(input.cloneNode(true));
+                const newInput = document.getElementById(`input${i}`);
+
+                newInput.addEventListener('input', function(e) {
+                    let value = e.target.value.toUpperCase();
+
+                    // Filter only letters, numbers and spaces
+                    value = value.replace(/[^A-Z0-9 ]/g, '');
+
+                    if (value.length > 0) {
+                        playerName[i] = value[value.length - 1]; // Take last character
+                        updateNameDisplay();
+
+                        // Auto-advance to next letter
+                        if (i < 2) {
+                            setTimeout(() => focusLetterInput(i + 1), 100);
+                        } else {
+                            // Last letter, blur to hide keyboard
+                            newInput.blur();
+                        }
+                    }
+                });
+
+                newInput.addEventListener('focus', function() {
+                    currentLetterIndex = i;
+                    updateNameDisplay();
+                });
             }
         }
 
