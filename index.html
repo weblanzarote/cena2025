@@ -410,11 +410,9 @@
 
         /* Mobile Controls */
         #mobileControls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: relative;
             display: none;
+            margin: 15px auto 0;
             z-index: 100;
         }
 
@@ -422,10 +420,15 @@
             display: block;
         }
 
+        #mobileControls.hidden {
+            display: none !important;
+        }
+
         .dpad-container {
             position: relative;
             width: 180px;
             height: 180px;
+            margin: 0 auto;
             background-color: rgba(0, 0, 0, 0.3);
             border-radius: 50%;
             border: 3px solid rgba(234, 176, 3, 0.5);
@@ -688,15 +691,26 @@
                    (navigator.msMaxTouchPoints > 0));
         }
 
-        // Show mobile controls if touch device
-        if (isTouchDevice()) {
-            mobileControls.classList.add('visible');
-            if (controlsHint) {
-                controlsHint.innerHTML = '📱 Usa el D-pad para moverte';
+        // Update controls hint for mobile
+        const isMobile = isTouchDevice();
+        if (isMobile && controlsHint) {
+            controlsHint.innerHTML = '📱 Usa el D-pad para moverte';
+        }
+
+        // Show/hide mobile controls
+        function showMobileControls() {
+            if (isMobile) {
+                mobileControls.classList.remove('hidden');
+                mobileControls.classList.add('visible');
             }
         }
 
-        // Mobile control functions
+        function hideMobileControls() {
+            mobileControls.classList.add('hidden');
+            mobileControls.classList.remove('visible');
+        }
+
+        // Mobile control functions for gameplay
         function movePlayer(direction) {
             if (!gameRunning) return;
 
@@ -726,6 +740,26 @@
             }
         }
 
+        // Mobile control functions for name entry
+        function handleNameEntryMobile(direction) {
+            if (!nameEntryActive) return;
+
+            switch(direction) {
+                case 'up':
+                    changeLetter(1);
+                    break;
+                case 'down':
+                    changeLetter(-1);
+                    break;
+                case 'left':
+                    moveLetterCursor(-1);
+                    break;
+                case 'right':
+                    moveLetterCursor(1);
+                    break;
+            }
+        }
+
         // Setup mobile control buttons
         function setupMobileControls() {
             const buttons = {
@@ -743,14 +777,25 @@
                 btn.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     currentDirection = direction;
-                    movePlayer(direction);
 
-                    // Continue moving while held
-                    moveInterval = setInterval(() => {
-                        if (currentDirection === direction) {
-                            movePlayer(direction);
-                        }
-                    }, 150);
+                    // Check if we're in name entry mode
+                    if (nameEntryActive) {
+                        handleNameEntryMobile(direction);
+                        // For name entry, repeat while held
+                        moveInterval = setInterval(() => {
+                            if (currentDirection === direction && nameEntryActive) {
+                                handleNameEntryMobile(direction);
+                            }
+                        }, 300);
+                    } else {
+                        movePlayer(direction);
+                        // For gameplay, repeat while held
+                        moveInterval = setInterval(() => {
+                            if (currentDirection === direction) {
+                                movePlayer(direction);
+                            }
+                        }, 150);
+                    }
                 });
 
                 // Touch end - stop movement
@@ -776,7 +821,11 @@
                 // Mouse events for desktop testing
                 btn.addEventListener('mousedown', (e) => {
                     e.preventDefault();
-                    movePlayer(direction);
+                    if (nameEntryActive) {
+                        handleNameEntryMobile(direction);
+                    } else {
+                        movePlayer(direction);
+                    }
                 });
             });
         }
@@ -974,6 +1023,7 @@
             playerName = ['A', 'A', 'A'];
             updateNameDisplay();
             document.getElementById('finalTimeDisplay').textContent = formatTime(finalTime);
+            showMobileControls();
         }
 
         function updateNameDisplay() {
@@ -1008,6 +1058,7 @@
             const name = playerName.join('');
             const rank = await HighScoresManager.addScore(name, finalTime);
             nameEntryActive = false;
+            hideMobileControls();
 
             playWinSound();
 
@@ -1444,6 +1495,7 @@
             // Hide game elements
             gameTitle.classList.add('hidden');
             instructions.classList.add('hidden');
+            hideMobileControls();
 
             playWinSound();
 
@@ -1555,6 +1607,7 @@
             initEnemies();
             resetPlayer();
 
+            showMobileControls();
             startTimer();
             startBackgroundMusic();
             requestAnimationFrame(gameLoop);
