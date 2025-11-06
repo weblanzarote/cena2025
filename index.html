@@ -71,31 +71,6 @@
             letter-spacing: 4px;
         }
 
-        .startButton {
-            background-color: #eab003;
-            color: #000;
-            border: 4px solid #fff;
-            padding: 20px 60px;
-            font-size: 32px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            box-shadow: 0 8px 0 #fff;
-            transition: all 0.1s;
-        }
-
-        .startButton:hover {
-            background-color: #fff;
-            color: #000;
-            border-color: #eab003;
-            box-shadow: 0 8px 0 #eab003;
-        }
-
-        .startButton:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 0 #eab003;
-        }
-
         .winText {
             color: #eab003;
             font-size: 36px;
@@ -191,9 +166,6 @@
 
         /* Timer Display */
         #timer {
-            position: absolute;
-            top: 10px;
-            right: 10px;
             color: #eab003;
             font-size: 24px;
             font-weight: bold;
@@ -202,6 +174,13 @@
             padding: 10px 20px;
             border: 2px solid #eab003;
             border-radius: 5px;
+            text-align: center;
+            width: fit-content;
+            margin: 0 auto 10px;
+        }
+
+        #timer.hidden {
+            display: none;
         }
 
         /* High Scores Screen */
@@ -214,11 +193,12 @@
             background-color: #000;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             color: #fff;
             text-align: center;
             overflow-y: auto;
+            padding: 40px 20px;
         }
 
         #highScoresScreen.hidden {
@@ -236,6 +216,7 @@
         .scoresTable {
             margin: 20px 0;
             min-width: 500px;
+            flex-grow: 0;
         }
 
         .scoreRow {
@@ -393,19 +374,47 @@
         .submitButton {
             background-color: #eab003;
             color: #000;
-            border: 4px solid #fff;
-            padding: 15px 50px;
-            font-size: 28px;
+            border: 3px solid #fff;
+            padding: 10px 30px;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             font-family: 'Courier New', monospace;
-            margin-top: 30px;
+            margin-top: 15px;
             transition: all 0.3s;
         }
 
         .submitButton:hover {
             background-color: #fff;
             transform: scale(1.05);
+        }
+
+        /* Start screen buttons */
+        .startButton {
+            background-color: #eab003;
+            color: #000;
+            border: 4px solid #fff;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            box-shadow: 0 8px 0 #fff;
+            transition: all 0.1s;
+            min-width: 280px;
+            margin: 10px 0;
+        }
+
+        .startButton:hover {
+            background-color: #fff;
+            color: #000;
+            border-color: #eab003;
+            box-shadow: 0 8px 0 #eab003;
+        }
+
+        .startButton:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #eab003;
         }
 
         /* Mobile Controls */
@@ -500,6 +509,10 @@
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
             #gameContainer {
                 width: 100%;
                 max-width: 800px;
@@ -514,16 +527,75 @@
 
             .instructions {
                 width: 100%;
-                font-size: 14px;
+                font-size: 13px;
+                padding: 10px;
             }
 
             .gameTitle {
-                font-size: 16px;
+                font-size: 18px;
+                margin-bottom: 5px;
             }
 
             #timer {
                 font-size: 18px;
                 padding: 8px 15px;
+            }
+
+            .scoresTable {
+                min-width: 300px;
+                width: 90%;
+            }
+
+            .scoreRow {
+                padding: 8px 15px;
+                font-size: 16px;
+            }
+
+            .highScoresTitle {
+                font-size: 28px;
+                margin-bottom: 20px;
+            }
+
+            .logoImg {
+                max-width: 250px;
+            }
+
+            .startButton {
+                min-width: 240px;
+                font-size: 20px;
+                padding: 15px 30px;
+            }
+
+            .continueButton {
+                font-size: 20px;
+                padding: 12px 30px;
+            }
+
+            .nameEntryTitle {
+                font-size: 28px;
+            }
+
+            .yourTimeDisplay {
+                font-size: 22px;
+            }
+
+            .letterBox {
+                width: 70px;
+                height: 90px;
+            }
+
+            .letterDisplay {
+                font-size: 42px;
+            }
+
+            .nameInputContainer {
+                gap: 15px;
+            }
+
+            .submitButton {
+                font-size: 18px;
+                padding: 8px 25px;
+                margin-top: 10px;
             }
         }
     </style>
@@ -537,7 +609,10 @@
         <button class="skipIntro" onclick="skipIntro()">SALTAR ►</button>
     </div>
 
-    <div class="gameTitle hidden" id="gameTitle">MICROSISTEMAS: LA RUTA AL EVENTO</div>
+    <div class="gameTitle hidden" id="gameTitle">CONSIGUE TU INVITACIÓN</div>
+
+    <!-- Timer Display (above game during play) -->
+    <div id="timer" class="hidden">00:00</div>
 
     <div id="gameContainer">
         <!-- High Scores Screen -->
@@ -574,14 +649,11 @@
 
         <div id="startScreen" class="hidden">
             <img src="logo.png" alt="Microsistemas Logo" class="logoImg">
-            <button class="startButton" onclick="startGame()">START</button>
-            <button class="startButton" onclick="showHighScores()" style="margin-top: 20px; font-size: 24px;">VER HIGH SCORES</button>
+            <button class="startButton" onclick="startGame()">EMPEZAR</button>
+            <button class="startButton" onclick="showHighScores()">VER MEJORES TIEMPOS</button>
         </div>
 
         <canvas id="gameCanvas" width="800" height="600"></canvas>
-
-        <!-- Timer Display -->
-        <div id="timer" class="hidden">00:00</div>
 
         <div id="winScreen" class="hidden">
             <div class="winText">¡RUTA COMPLETADA!</div>
