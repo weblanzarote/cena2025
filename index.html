@@ -206,6 +206,26 @@
             display: none;
         }
 
+        /* Maze Indicator */
+        #mazeIndicator {
+            color: rgba(234, 176, 3, 0.6);
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(234, 176, 3, 0.5);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 5px 10px;
+            border: 1px solid rgba(234, 176, 3, 0.4);
+            border-radius: 3px;
+            text-align: right;
+            width: fit-content;
+            margin: 0 auto 5px;
+            opacity: 0.7;
+        }
+
+        #mazeIndicator.hidden {
+            display: none;
+        }
+
         /* High Scores Screen */
         #highScoresScreen {
             position: absolute;
@@ -595,6 +615,11 @@
                 padding: 8px 15px;
             }
 
+            #mazeIndicator {
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+
             /* High Scores Mobile Optimization */
             #highScoresScreen {
                 padding: 15px 10px;
@@ -720,6 +745,9 @@
 
     <!-- Timer Display (above game during play) -->
     <div id="timer" class="hidden">00:00</div>
+
+    <!-- Maze Number Indicator -->
+    <div id="mazeIndicator" class="hidden">Laberinto #1</div>
 
     <div id="gameContainer">
         <!-- High Scores Screen -->
@@ -1987,6 +2015,7 @@
             stopBackgroundMusic();
             const time = stopTimer();
             timerDisplay.classList.add('hidden');
+            document.getElementById('mazeIndicator').classList.add('hidden');
 
             // Hide game elements
             gameTitle.classList.add('hidden');
@@ -2104,6 +2133,14 @@
             generateMaze(currentMazeIndex);
             initEnemies();
             resetPlayer();
+
+            // Show maze indicator
+            const mazeIndicator = document.getElementById('mazeIndicator');
+            mazeIndicator.textContent = `Laberinto #${currentMazeIndex + 1}`;
+            mazeIndicator.classList.remove('hidden');
+
+            // Also log to console for debugging
+            console.log(`🎮 Playing Maze #${currentMazeIndex + 1} of ${MAZE_CONFIGS.length}`);
 
             showMobileControls();
             startTimer();
