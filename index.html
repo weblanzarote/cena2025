@@ -2053,14 +2053,16 @@ const MAZE_CONFIGS = (function makeMazes() {
         }
 
         function drawPlayer() {
-            ctx.fillStyle = COLORS.player;
-            ctx.shadowColor = COLORS.player;
+            // Draw graduation cap emoji
+            ctx.shadowColor = '#ffffff';
             ctx.shadowBlur = 10;
-            ctx.fillRect(
-                player.x * TILE_SIZE + 6,
-                player.y * TILE_SIZE + 6,
-                8,
-                8
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(
+                '🎓',
+                player.x * TILE_SIZE + 10,
+                player.y * TILE_SIZE + 10
             );
             ctx.shadowBlur = 0;
         }
