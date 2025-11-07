@@ -727,7 +727,7 @@
             <source src="intro.mp4" type="video/mp4">
         </video>
         <button class="skipIntro" onclick="skipIntro()">SALTAR ►</button>
-        <button class="playIntro" id="playIntro" onclick="playIntro()" style="display: none;">▶ REPRODUCIR VÍDEO</button>
+        <button class="playIntro" id="playIntro" onclick="playIntro()" style="display: none;">🎁 ABRIR INVITACIÓN</button>
     </div>
 
     <div class="gameTitle hidden" id="gameTitle">CONSIGUE TU INVITACIÓN</div>
@@ -741,9 +741,9 @@
     <div id="gameContainer">
         <!-- High Scores Screen -->
         <div id="highScoresScreen" class="hidden">
-            <div class="highScoresTitle">🏆 HIGH SCORES 🏆</div>
+            <div class="highScoresTitle">🏆 MEJORES TIEMPOS 🏆</div>
             <div class="scoresTable" id="scoresTable"></div>
-            <button class="continueButton" onclick="showStartScreen()">JUGAR</button>
+            <button class="continueButton" onclick="showStartScreen()">VOLVER</button>
         </div>
 
         <!-- Name Entry Screen -->
@@ -776,7 +776,7 @@
 
         <div id="startScreen" class="hidden">
             <img src="logo.png" alt="Microsistemas Logo" class="logoImg">
-            <button class="startButton" onclick="startGame()">EMPEZAR</button>
+            <button class="startButton" onclick="startGame()">ENCUENTRA TU INVITACIÓN</button>
             <button class="startButton" onclick="showHighScores()">VER MEJORES TIEMPOS</button>
         </div>
 
@@ -1209,7 +1209,7 @@
                 clearTimeout(videoLoadTimeout);
             }
             introScreen.classList.add('hidden');
-            showHighScores();
+            showStartScreen();
         }
 
         // Timer functions
@@ -1799,7 +1799,7 @@ function buildOneMaze({rows, cols, seed, targetMinDist=160, braid=0.35}) {
     if (stats.maxStraightRun > maxStraightRun) continue;
 
     const segments = gridToSegments(grid);
-    const enemies  = autoEnemiesFromSegments(segments, rnd, 4);
+    const enemies  = autoEnemiesFromSegments(segments, rnd, 3);
     return { paths: segments, enemies };
   }
 
@@ -1812,7 +1812,7 @@ function buildOneMaze({rows, cols, seed, targetMinDist=160, braid=0.35}) {
 
 
 // Enemigos automáticos: busca corredores largos horizontales/verticales y asigna bounds
-function autoEnemiesFromSegments(segments, rnd, maxEnemies=4) {
+function autoEnemiesFromSegments(segments, rnd, maxEnemies=3) {
   const horiz = segments.filter(s => s[0][0] === s[1][0]); // y igual
   const vert  = segments.filter(s => s[0][1] === s[1][1]); // x igual
 
@@ -1896,8 +1896,7 @@ const MAZE_CONFIGS = (function makeMazes() {
     enemies: [
       { x: 10, y: 3, dx: 1, dy: 0, path: 'horizontal', bounds: { minX: 3, maxX: 12, y: 3 } },
       { x: 15, y: 7, dx: 0, dy: 1, path: 'vertical', bounds: { x: 15, minY: 5, maxY: 15 } },
-      { x: 18, y: 19, dx: -1, dy: 0, path: 'horizontal', bounds: { minX: 12, maxX: 23, y: 19 } },
-      { x: 30, y: 21, dx: 0, dy: -1, path: 'vertical', bounds: { x: 30, minY: 10, maxY: 21 } }
+      { x: 18, y: 19, dx: -1, dy: 0, path: 'horizontal', bounds: { minX: 12, maxX: 23, y: 19 } }
     ]
   };
 
@@ -2158,8 +2157,8 @@ const MAZE_CONFIGS = (function makeMazes() {
         // Game logic
         function moveEnemies() {
             enemies.forEach(enemy => {
-                // Occasionally change direction randomly (10% chance)
-                if (Math.random() < 0.10) {
+                // Occasionally change direction randomly (5% chance)
+                if (Math.random() < 0.05) {
                     const directions = [
                         { dx: 1, dy: 0 },  // right
                         { dx: -1, dy: 0 }, // left
@@ -2237,6 +2236,36 @@ const MAZE_CONFIGS = (function makeMazes() {
         function resetPlayer() {
             player.x = 1;
             player.y = 1;
+            // Relocate enemies randomly when player dies
+            relocateEnemies();
+        }
+
+        function relocateEnemies() {
+            enemies.forEach(enemy => {
+                // Find a random valid position in the maze
+                let attempts = 0;
+                let newX, newY;
+                do {
+                    newX = Math.floor(Math.random() * COLS);
+                    newY = Math.floor(Math.random() * ROWS);
+                    attempts++;
+                } while ((maze[newY][newX] !== 0 || (newX === player.x && newY === player.y)) && attempts < 100);
+
+                if (attempts < 100) {
+                    enemy.x = newX;
+                    enemy.y = newY;
+                    // Random direction
+                    const directions = [
+                        { dx: 1, dy: 0 },  // right
+                        { dx: -1, dy: 0 }, // left
+                        { dx: 0, dy: 1 },  // down
+                        { dx: 0, dy: -1 }  // up
+                    ];
+                    const newDir = directions[Math.floor(Math.random() * directions.length)];
+                    enemy.dx = newDir.dx;
+                    enemy.dy = newDir.dy;
+                }
+            });
         }
 
         async function winGame() {
