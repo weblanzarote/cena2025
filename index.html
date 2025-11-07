@@ -208,18 +208,7 @@
 
         /* Maze Indicator */
         #mazeIndicator {
-            color: rgba(234, 176, 3, 0.6);
-            font-size: 14px;
-            font-weight: bold;
-            text-shadow: 0 0 5px rgba(234, 176, 3, 0.5);
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 5px 10px;
-            border: 1px solid rgba(234, 176, 3, 0.4);
-            border-radius: 3px;
-            text-align: right;
-            width: fit-content;
-            margin: 0 auto 5px;
-            opacity: 0.7;
+            display: none !important;
         }
 
         #mazeIndicator.hidden {
@@ -495,7 +484,7 @@
         #mobileControls {
             position: relative;
             display: none;
-            margin: 15px auto 0;
+            margin: 15px auto 30px;
             z-index: 100;
         }
 
@@ -734,7 +723,7 @@
 <body>
     <!-- Intro Video Screen -->
     <div id="introScreen">
-        <video id="introVideo" autoplay muted playsinline>
+        <video id="introVideo" playsinline>
             <source src="intro.mp4" type="video/mp4">
         </video>
         <button class="skipIntro" onclick="skipIntro()">SALTAR ►</button>
@@ -1155,6 +1144,23 @@
         let videoLoadTimeout;
         let videoHasPlayed = false;
 
+        // Setup video based on device type
+        (function setupVideo() {
+            if (isMobile) {
+                // On mobile: show play button immediately for video with sound
+                console.log('Mobile detected: showing play button for video with sound');
+                showPlayButton();
+            } else {
+                // On desktop: try autoplay with muted
+                introVideo.muted = true;
+                introVideo.autoplay = true;
+                introVideo.play().catch(function(error) {
+                    console.warn('Desktop autoplay failed, showing play button:', error);
+                    showPlayButton();
+                });
+            }
+        })();
+
         // Handle video ended
         introVideo.addEventListener('ended', function() {
             videoHasPlayed = true;
@@ -1179,27 +1185,8 @@
         // Handle video stall
         introVideo.addEventListener('stalled', function() {
             console.warn('Video stalled');
-            showPlayButton();
+            if (!isMobile) showPlayButton(); // On desktop, show button if stalled
         });
-
-        // Detect if video doesn't autoplay (iOS restriction)
-        introVideo.addEventListener('loadedmetadata', function() {
-            // Give the video 1 second to start playing
-            videoLoadTimeout = setTimeout(function() {
-                if (!videoHasPlayed && introVideo.paused) {
-                    console.warn('Video autoplay blocked, showing play button');
-                    showPlayButton();
-                }
-            }, 1000);
-        });
-
-        // Fallback: If video doesn't play within 3 seconds of page load, show play button
-        setTimeout(function() {
-            if (!videoHasPlayed && !introScreen.classList.contains('hidden')) {
-                console.warn('Video did not start after 3 seconds, showing play button');
-                showPlayButton();
-            }
-        }, 3000);
 
         function showPlayButton() {
             playIntroBtn.style.display = 'block';
@@ -1207,6 +1194,8 @@
 
         function playIntro() {
             playIntroBtn.style.display = 'none';
+            // Unmute video for sound playback
+            introVideo.muted = false;
             introVideo.play().catch(function(error) {
                 console.error('Failed to play video:', error);
                 // If manual play also fails, skip to game
@@ -2169,15 +2158,55 @@ const MAZE_CONFIGS = (function makeMazes() {
         // Game logic
         function moveEnemies() {
             enemies.forEach(enemy => {
-                if (enemy.path === 'horizontal') {
-                    enemy.x += enemy.dx;
-                    if (enemy.x <= enemy.bounds.minX || enemy.x >= enemy.bounds.maxX) {
-                        enemy.dx *= -1;
+                // Occasionally change direction randomly (10% chance)
+                if (Math.random() < 0.10) {
+                    const directions = [
+                        { dx: 1, dy: 0 },  // right
+                        { dx: -1, dy: 0 }, // left
+                        { dx: 0, dy: 1 },  // down
+                        { dx: 0, dy: -1 }  // up
+                    ];
+                    const validDirections = directions.filter(dir => {
+                        const newX = Math.round(enemy.x + dir.dx);
+                        const newY = Math.round(enemy.y + dir.dy);
+                        return newX >= 0 && newX < COLS && newY >= 0 && newY < ROWS && maze[newY][newX] === 0;
+                    });
+                    if (validDirections.length > 0) {
+                        const newDir = validDirections[Math.floor(Math.random() * validDirections.length)];
+                        enemy.dx = newDir.dx;
+                        enemy.dy = newDir.dy;
                     }
+                }
+
+                // Try to move in current direction
+                const newX = Math.round(enemy.x + enemy.dx);
+                const newY = Math.round(enemy.y + enemy.dy);
+
+                // Check if new position is valid (within bounds and not a wall)
+                if (newX >= 0 && newX < COLS && newY >= 0 && newY < ROWS && maze[newY][newX] === 0) {
+                    enemy.x = newX;
+                    enemy.y = newY;
                 } else {
-                    enemy.y += enemy.dy;
-                    if (enemy.y <= enemy.bounds.minY || enemy.y >= enemy.bounds.maxY) {
-                        enemy.dy *= -1;
+                    // Hit a wall, choose a random valid direction
+                    const directions = [
+                        { dx: 1, dy: 0 },  // right
+                        { dx: -1, dy: 0 }, // left
+                        { dx: 0, dy: 1 },  // down
+                        { dx: 0, dy: -1 }  // up
+                    ];
+                    const validDirections = directions.filter(dir => {
+                        const testX = Math.round(enemy.x + dir.dx);
+                        const testY = Math.round(enemy.y + dir.dy);
+                        return testX >= 0 && testX < COLS && testY >= 0 && testY < ROWS && maze[testY][testX] === 0;
+                    });
+
+                    if (validDirections.length > 0) {
+                        const newDir = validDirections[Math.floor(Math.random() * validDirections.length)];
+                        enemy.dx = newDir.dx;
+                        enemy.dy = newDir.dy;
+                        // Move in the new direction
+                        enemy.x = Math.round(enemy.x + enemy.dx);
+                        enemy.y = Math.round(enemy.y + enemy.dy);
                     }
                 }
             });
