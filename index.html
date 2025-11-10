@@ -784,16 +784,16 @@
 
         <div id="winScreen" class="hidden">
             <div class="winText">¡ESTÁS DENTRO!</div>
-            <div id="timeResult" style="color: #eab003; font-size: 28px; margin: 15px 0 10px 0;"></div>
-            <div class="invitationText" style="margin-bottom: 5px;">Has conseguido tu invitación para:</div>
-            <div class="invitationText" style="font-size: 26px; margin: 8px 0;">
+            <div id="timeResult" style="color: #eab003; font-size: 28px; margin: 10px 0 8px 0;"></div>
+            <div class="invitationText" style="margin-bottom: 3px;">Has conseguido tu invitación para:</div>
+            <div class="invitationText" style="font-size: 26px; margin: 5px 0;">
                 CENA DE EMPRESA MICROSISTEMAS
             </div>
-            <div class="invitationText" style="font-size: 22px; margin: 5px 0;">MS desde 1981</div>
-            <div class="invitationText" style="margin: 8px 0 3px 0;"><span class="highlight">FECHA:</span> 19 de Diciembre, 2025</div>
-            <div class="invitationText" style="margin: 3px 0;"><span class="highlight">HORA:</span> 19:00 horas</div>
-            <div class="invitationText" style="margin: 3px 0 8px 0;"><span class="highlight">VESTIMENTA:</span> 80`s</div>
-            <div class="invitationText" style="margin: 15px 0 20px 0; font-size: 22px; color: #eab003;">
+            <div class="invitationText" style="font-size: 22px; margin: 3px 0;">MS desde 1981</div>
+            <div class="invitationText" style="margin: 5px 0 2px 0;"><span class="highlight">FECHA:</span> 19 de Diciembre, 2025</div>
+            <div class="invitationText" style="margin: 2px 0;"><span class="highlight">HORA:</span> 19:00 horas</div>
+            <div class="invitationText" style="margin: 2px 0 5px 0;"><span class="highlight">VESTIMENTA:</span> 80`s</div>
+            <div class="invitationText" style="margin: 10px 0 15px 0; font-size: 22px; color: #eab003;">
                 ¡Te esperamos!
             </div>
             <button class="startButton" onclick="showStartScreen()">VOLVER</button>
@@ -1275,6 +1275,7 @@
 
         function showStartScreen() {
             highScoresScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
             startScreen.classList.remove('hidden');
         }
 
