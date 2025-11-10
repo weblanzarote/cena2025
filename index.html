@@ -51,6 +51,7 @@
             align-items: center;
             color: #fff;
             text-align: center;
+            z-index: 1000;
         }
 
         #startScreen.hidden, #winScreen.hidden {
@@ -783,18 +784,19 @@
 
         <div id="winScreen" class="hidden">
             <div class="winText">¡ESTÁS DENTRO!</div>
-            <div id="timeResult" style="color: #eab003; font-size: 32px; margin: 20px 0;"></div>
-            <div class="invitationText">Has conseguido tu invitación para:</div>
-            <div class="invitationText" style="font-size: 28px; margin: 20px 0;">
+            <div id="timeResult" style="color: #eab003; font-size: 28px; margin: 10px 0 8px 0;"></div>
+            <div class="invitationText" style="margin-bottom: 3px;">Has conseguido tu invitación para:</div>
+            <div class="invitationText" style="font-size: 26px; margin: 5px 0;">
                 CENA DE EMPRESA MICROSISTEMAS
             </div>
-            <div class="invitationText" style="font-size: 24px; margin: 10px 0;">MS desde 1981</div>
-            <div class="invitationText"><span class="highlight">FECHA:</span> 19 de Diciembre, 2025</div>
-            <div class="invitationText"><span class="highlight">HORA:</span> 19:00 horas</div>
-            <div class="invitationText"><span class="highlight">VESTIMENTA:</span> 80`s</div>
-            <div class="invitationText" style="margin-top: 30px; font-size: 24px; color: #eab003;">
+            <div class="invitationText" style="font-size: 22px; margin: 3px 0;">MS desde 1981</div>
+            <div class="invitationText" style="margin: 5px 0 2px 0;"><span class="highlight">FECHA:</span> 19 de Diciembre, 2025</div>
+            <div class="invitationText" style="margin: 2px 0;"><span class="highlight">HORA:</span> 19:00 horas</div>
+            <div class="invitationText" style="margin: 2px 0 5px 0;"><span class="highlight">VESTIMENTA:</span> 80`s</div>
+            <div class="invitationText" style="margin: 10px 0 15px 0; font-size: 22px; color: #eab003;">
                 ¡Te esperamos!
             </div>
+            <button class="startButton" onclick="showStartScreen()">VOLVER</button>
         </div>
     </div>
 
@@ -1273,6 +1275,7 @@
 
         function showStartScreen() {
             highScoresScreen.classList.add('hidden');
+            winScreen.classList.add('hidden');
             startScreen.classList.remove('hidden');
         }
 
@@ -1390,18 +1393,10 @@
 
             playWinSound();
 
-            // Show high scores with the new entry highlighted
-            const scores = await HighScoresManager.getScores();
+            // Show invitation directly
             nameEntryScreen.classList.add('hidden');
-            highScoresScreen.classList.remove('hidden');
-            renderHighScores(scores, rank);
-
-            // After 5 seconds, show invitation
-            setTimeout(() => {
-                timeResult.textContent = `Tiempo: ${formatTime(finalTime)}`;
-                winScreen.classList.remove('hidden');
-                highScoresScreen.classList.add('hidden');
-            }, 5000);
+            timeResult.textContent = `Tiempo: ${formatTime(finalTime)}`;
+            winScreen.classList.remove('hidden');
         }
 
         // Handle name entry keyboard input
@@ -1907,7 +1902,7 @@ const MAZE_CONFIGS = (function makeMazes() {
   for (let i=0; i<9; i++) {
     const seed   = seedsBase + i*97;
     const target = targets[i] || 170;
-    const braid  = 0.30 + (i*0.02); // más loops poco a poco
+    const braid  = 0.60 + (i*0.02); // más loops poco a poco
     configs.push( buildOneMaze({ rows: ROWS, cols: COLS, seed, targetMinDist: target, braid }) );
   }
   return configs;
@@ -1949,6 +1944,9 @@ const MAZE_CONFIGS = (function makeMazes() {
                     }
                 }
             }
+
+            // Note: Alternative paths are already created by the braided maze generator
+            // using the 'braid' parameter in generateMazeGrid(). No need for addAlternativePaths().
         }
 
         // Initialize enemies
