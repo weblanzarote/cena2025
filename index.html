@@ -1945,39 +1945,8 @@ const MAZE_CONFIGS = (function makeMazes() {
                 }
             }
 
-            // Add alternative paths to make the maze less linear
-            addAlternativePaths(15);
-        }
-
-        // Add random alternative paths by converting some walls to paths
-        function addAlternativePaths(numPaths) {
-            let pathsAdded = 0;
-            let attempts = 0;
-            const maxAttempts = 200;
-
-            while (pathsAdded < numPaths && attempts < maxAttempts) {
-                attempts++;
-
-                // Pick a random wall cell (not on the edges)
-                const row = 1 + Math.floor(Math.random() * (ROWS - 2));
-                const col = 1 + Math.floor(Math.random() * (COLS - 2));
-
-                // Skip if already a path
-                if (maze[row][col] === 0) continue;
-
-                // Check if this wall has at least one adjacent path (not diagonal)
-                const hasAdjacentPath =
-                    maze[row - 1][col] === 0 || // up
-                    maze[row + 1][col] === 0 || // down
-                    maze[row][col - 1] === 0 || // left
-                    maze[row][col + 1] === 0;   // right
-
-                // Convert to path only if it connects to existing paths
-                if (hasAdjacentPath) {
-                    maze[row][col] = 0;
-                    pathsAdded++;
-                }
-            }
+            // Note: Alternative paths are already created by the braided maze generator
+            // using the 'braid' parameter in generateMazeGrid(). No need for addAlternativePaths().
         }
 
         // Initialize enemies
