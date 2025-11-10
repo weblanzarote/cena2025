@@ -1902,7 +1902,7 @@ const MAZE_CONFIGS = (function makeMazes() {
   for (let i=0; i<9; i++) {
     const seed   = seedsBase + i*97;
     const target = targets[i] || 170;
-    const braid  = 0.30 + (i*0.02); // más loops poco a poco
+    const braid  = 0.50 + (i*0.02); // más loops poco a poco
     configs.push( buildOneMaze({ rows: ROWS, cols: COLS, seed, targetMinDist: target, braid }) );
   }
   return configs;
