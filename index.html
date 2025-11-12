@@ -91,17 +91,6 @@
             font-weight: bold;
         }
 
-        .instructions {
-            color: #eab003;
-            font-size: 16px;
-            text-align: center;
-            background-color: #000;
-            padding: 15px;
-            border: 2px solid #eab003;
-            width: 800px;
-            box-shadow: 0 0 20px rgba(234, 176, 3, 0.3);
-        }
-
         .gameTitle {
             color: #eab003;
             font-size: 18px;
@@ -111,7 +100,7 @@
             text-shadow: 0 0 10px rgba(234, 176, 3, 0.5);
         }
 
-        .gameTitle.hidden, .instructions.hidden {
+        .gameTitle.hidden {
             display: none;
         }
 
@@ -205,6 +194,77 @@
 
         #timer.hidden {
             display: none;
+        }
+
+        /* Photo Counter */
+        #photoCounter {
+            color: #eab003;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(234, 176, 3, 0.8);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border: 2px solid #eab003;
+            border-radius: 5px;
+            text-align: center;
+            width: fit-content;
+            margin: 0 auto 10px;
+        }
+
+        #photoCounter.hidden {
+            display: none;
+        }
+
+        /* Photo Popup */
+        #photoPopup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        #photoPopup.hidden {
+            display: none;
+        }
+
+        .photoPopupImage {
+            max-width: 80%;
+            max-height: 60vh;
+            border: 4px solid #eab003;
+            box-shadow: 0 0 30px rgba(234, 176, 3, 0.8);
+            margin-bottom: 20px;
+        }
+
+        .photoPopupText {
+            color: #eab003;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .photoPopupButton {
+            background-color: #eab003;
+            color: #000;
+            border: 3px solid #fff;
+            padding: 10px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .photoPopupButton:hover {
+            background-color: #fff;
+            transform: scale(1.05);
         }
 
         /* Maze Indicator */
@@ -589,12 +649,6 @@
                 height: auto;
             }
 
-            .instructions {
-                width: 100%;
-                font-size: 13px;
-                padding: 10px;
-            }
-
             .gameTitle {
                 font-size: 18px;
                 margin-bottom: 5px;
@@ -735,8 +789,18 @@
     <!-- Timer Display (above game during play) -->
     <div id="timer" class="hidden">00:00</div>
 
+    <!-- Photo Counter -->
+    <div id="photoCounter" class="hidden">📸 0/5 (Min: 3)</div>
+
     <!-- Maze Number Indicator -->
     <div id="mazeIndicator" class="hidden">Laberinto #1</div>
+
+    <!-- Photo Popup -->
+    <div id="photoPopup" class="hidden">
+        <img id="photoPopupImage" class="photoPopupImage" src="" alt="Fotografía encontrada">
+        <div class="photoPopupText">¡Has encontrado una fotografía!</div>
+        <button class="photoPopupButton" onclick="closePhotoPopup()">CONTINUAR</button>
+    </div>
 
     <div id="gameContainer">
         <!-- High Scores Screen -->
@@ -789,20 +853,17 @@
             <div class="invitationText" style="font-size: 26px; margin: 5px 0;">
                 CENA DE EMPRESA MICROSISTEMAS
             </div>
-            <div class="invitationText" style="font-size: 22px; margin: 3px 0;">MS desde 1981</div>
+            <div class="invitationText" style="font-size: 18px; margin: 3px 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <img src="ms_80.png" alt="MS" style="height: 24px; vertical-align: middle;"> desde 1981
+            </div>
             <div class="invitationText" style="margin: 5px 0 2px 0;"><span class="highlight">FECHA:</span> 19 de Diciembre, 2025</div>
             <div class="invitationText" style="margin: 2px 0;"><span class="highlight">HORA:</span> 19:00 horas</div>
-            <div class="invitationText" style="margin: 2px 0 5px 0;"><span class="highlight">VESTIMENTA:</span> 80`s</div>
+            <div class="invitationText" style="margin: 2px 0 5px 0;"><span class="highlight">VESTIMENTA:</span> AÑOS 80</div>
             <div class="invitationText" style="margin: 10px 0 15px 0; font-size: 22px; color: #eab003;">
                 ¡Te esperamos!
             </div>
             <button class="startButton" onclick="showStartScreen()">VOLVER</button>
         </div>
-    </div>
-
-    <div class="instructions hidden" id="instructions">
-        <div>🎯 <strong>OBJETIVO:</strong> Encuentra el logo de MICROSISTEMAS al final del laberinto</div>
-        <div style="margin-top: 8px;"><span id="controlsHint">⌨️ Usa las flechas <strong>← ↑ → ↓</strong> para moverte</span> | 🦠 Evita los virus rojos</div>
     </div>
 
     <!-- Mobile Touch Controls -->
@@ -851,7 +912,6 @@
         const ctx = canvas.getContext('2d');
         const startScreen = document.getElementById('startScreen');
         const winScreen = document.getElementById('winScreen');
-        const instructions = document.getElementById('instructions');
         const gameTitle = document.getElementById('gameTitle');
         const introScreen = document.getElementById('introScreen');
         const introVideo = document.getElementById('introVideo');
@@ -880,9 +940,24 @@
 
         // Mobile controls
         const mobileControls = document.getElementById('mobileControls');
-        const controlsHint = document.getElementById('controlsHint');
         let currentDirection = null;
         let moveInterval = null;
+
+        // Photo collection system
+        const photoCounter = document.getElementById('photoCounter');
+        const photoPopup = document.getElementById('photoPopup');
+        const photoPopupImage = document.getElementById('photoPopupImage');
+        let collectedPhotos = [];
+        let photos = []; // Will be populated when maze is generated
+        const PHOTO_FILES = ['foto1.png', 'foto2.png', 'foto3.png', 'foto4.png', 'foto5.png'];
+        const MIN_PHOTOS_REQUIRED = 3;
+
+        // Win screen music
+        const winMusic = new Audio('musica.mp3');
+        winMusic.loop = true;
+
+        // Achievement sound
+        const achievementSound = new Audio('logro.mp4');
 
         // Detect if device is mobile/touch
         function isTouchDevice() {
@@ -891,11 +966,7 @@
                    (navigator.msMaxTouchPoints > 0));
         }
 
-        // Update controls hint for mobile
         const isMobile = isTouchDevice();
-        if (isMobile && controlsHint) {
-            controlsHint.innerHTML = '📱 Usa el D-pad para moverte';
-        }
 
         // Show/hide mobile controls
         function showMobileControls() {
@@ -1277,6 +1348,7 @@
             highScoresScreen.classList.add('hidden');
             winScreen.classList.add('hidden');
             startScreen.classList.remove('hidden');
+            stopWinMusic(); // Stop the win music when returning to start screen
         }
 
         // Name Entry System
@@ -2220,10 +2292,22 @@ const MAZE_CONFIGS = (function makeMazes() {
                 }
             });
 
+            // Check photo collection
+            checkPhotoCollection();
+
             // Check goal collision - player is in the goal area
             if (player.x >= goalArea.x && player.x < goalArea.x + goalArea.width &&
                 player.y >= goalArea.y && player.y < goalArea.y + goalArea.height) {
-                winGame();
+                // Only allow winning if player has collected minimum required photos
+                if (collectedPhotos.length >= MIN_PHOTOS_REQUIRED) {
+                    winGame();
+                } else {
+                    // Play error sound and show message
+                    playZapSound();
+                    // Flash yellow instead of red to indicate "not yet"
+                    ctx.fillStyle = 'rgba(234, 176, 3, 0.5)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                }
             }
         }
 
@@ -2267,19 +2351,137 @@ const MAZE_CONFIGS = (function makeMazes() {
             });
         }
 
+        // Photo collection functions
+        function generatePhotos() {
+            photos = [];
+            collectedPhotos = [];
+
+            // Place 5 photos in accessible locations
+            const attempts = 0;
+            const maxAttempts = 500;
+
+            for (let i = 0; i < 5 && attempts < maxAttempts; i++) {
+                let placed = false;
+                let photoAttempts = 0;
+
+                while (!placed && photoAttempts < 100) {
+                    photoAttempts++;
+
+                    // Pick random location
+                    const x = 2 + Math.floor(Math.random() * (COLS - 4));
+                    const y = 2 + Math.floor(Math.random() * (ROWS - 4));
+
+                    // Check if it's a path and not too close to start or goal
+                    if (maze[y][x] === 0) {
+                        const distFromStart = Math.abs(x - 1) + Math.abs(y - 1);
+                        const distFromGoal = Math.abs(x - 37) + Math.abs(y - 27);
+
+                        // Not too close to start or goal, and not already a photo there
+                        if (distFromStart > 5 && distFromGoal > 5) {
+                            const alreadyThere = photos.some(p => p.x === x && p.y === y);
+                            if (!alreadyThere) {
+                                photos.push({
+                                    x: x,
+                                    y: y,
+                                    photoFile: PHOTO_FILES[i],
+                                    collected: false
+                                });
+                                placed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            updatePhotoCounter();
+        }
+
+        function updatePhotoCounter() {
+            const collected = collectedPhotos.length;
+            const total = photos.length;
+            photoCounter.textContent = `📸 ${collected}/${total} (Min: ${MIN_PHOTOS_REQUIRED})`;
+        }
+
+        function drawPhotos() {
+            photos.forEach(photo => {
+                if (!photo.collected) {
+                    const x = photo.x * TILE_SIZE + TILE_SIZE / 2;
+                    const y = photo.y * TILE_SIZE + TILE_SIZE / 2;
+
+                    // Draw pulsing photo icon
+                    const pulse = 1 + Math.sin(Date.now() / 300) * 0.2;
+                    ctx.save();
+                    ctx.translate(x, y);
+                    ctx.scale(pulse, pulse);
+
+                    // Photo emoji or icon
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.shadowColor = '#eab003';
+                    ctx.shadowBlur = 10;
+                    ctx.fillText('📸', 0, 0);
+
+                    ctx.restore();
+                }
+            });
+        }
+
+        function checkPhotoCollection() {
+            photos.forEach(photo => {
+                if (!photo.collected && player.x === photo.x && player.y === photo.y) {
+                    photo.collected = true;
+                    collectedPhotos.push(photo.photoFile);
+                    showPhotoPopup(photo.photoFile);
+                    playAchievementSound();
+                    updatePhotoCounter();
+                }
+            });
+        }
+
+        function showPhotoPopup(photoFile) {
+            gameRunning = false;
+            photoPopupImage.src = photoFile;
+            photoPopup.classList.remove('hidden');
+        }
+
+        function closePhotoPopup() {
+            photoPopup.classList.add('hidden');
+            gameRunning = true;
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Music control functions
+        function playWinMusic() {
+            winMusic.currentTime = 0;
+            winMusic.play().catch(e => console.log('Music playback failed:', e));
+        }
+
+        function stopWinMusic() {
+            winMusic.pause();
+            winMusic.currentTime = 0;
+        }
+
+        function playAchievementSound() {
+            achievementSound.currentTime = 0;
+            achievementSound.play().catch(e => console.log('Achievement sound playback failed:', e));
+        }
+
         async function winGame() {
             gameRunning = false;
             stopBackgroundMusic();
             const time = stopTimer();
             timerDisplay.classList.add('hidden');
+            photoCounter.classList.add('hidden');
             document.getElementById('mazeIndicator').classList.add('hidden');
 
             // Hide game elements
             gameTitle.classList.add('hidden');
-            instructions.classList.add('hidden');
             hideMobileControls();
 
             playWinSound();
+            playAchievementSound(); // Play achievement sound
+            playWinMusic(); // Start playing the win music
 
             // Fade out
             let opacity = 1;
@@ -2368,6 +2570,7 @@ const MAZE_CONFIGS = (function makeMazes() {
 
             drawMaze();
             drawGoal();
+            drawPhotos();
             drawEnemies();
             drawPlayer();
 
@@ -2381,7 +2584,6 @@ const MAZE_CONFIGS = (function makeMazes() {
             startScreen.classList.add('hidden');
             highScoresScreen.classList.add('hidden');
             gameTitle.classList.remove('hidden');
-            instructions.classList.remove('hidden');
             nameEntryActive = false;
             gameRunning = true;
 
@@ -2389,12 +2591,16 @@ const MAZE_CONFIGS = (function makeMazes() {
             currentMazeIndex = Math.floor(Math.random() * MAZE_CONFIGS.length);
             generateMaze(currentMazeIndex);
             initEnemies();
+            generatePhotos(); // Generate photos after maze is created
             resetPlayer();
 
             // Show maze indicator
             const mazeIndicator = document.getElementById('mazeIndicator');
             mazeIndicator.textContent = `Laberinto #${currentMazeIndex + 1}`;
             mazeIndicator.classList.remove('hidden');
+
+            // Show photo counter
+            photoCounter.classList.remove('hidden');
 
             // Also log to console for debugging
             console.log(`🎮 Playing Maze #${currentMazeIndex + 1} of ${MAZE_CONFIGS.length}`);
