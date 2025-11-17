@@ -857,7 +857,8 @@
                 <img src="ms_80.png" alt="MS" style="height: 24px; vertical-align: middle;"> desde 1981
             </div>
             <div class="invitationText" style="margin: 5px 0 2px 0;"><span class="highlight">FECHA:</span> 19 de Diciembre, 2025</div>
-            <div class="invitationText" style="margin: 2px 0;"><span class="highlight">HORA:</span> 19:00 horas</div>
+            <div class="invitationText" style="margin: 2px 0;"><span class="highlight">HORA:</span> 20:30 horas</div>
+			<div class="invitationText" style="margin: 2px 0;"><span class="highlight">LUGAR:</span> ARRECIFE GRAN HOTEL</div>
             <div class="invitationText" style="margin: 2px 0 5px 0;"><span class="highlight">VESTIMENTA:</span> AÑOS 80</div>
             <div class="invitationText" style="margin: 10px 0 15px 0; font-size: 22px; color: #eab003;">
                 ¡Te esperamos!
@@ -937,6 +938,7 @@
         let currentLetterIndex = 0;
         let playerName = ['A', 'A', 'A'];
         const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ';
+			
 
         // Mobile controls
         const mobileControls = document.getElementById('mobileControls');
@@ -949,15 +951,15 @@
         const photoPopupImage = document.getElementById('photoPopupImage');
         let collectedPhotos = [];
         let photos = []; // Will be populated when maze is generated
-        const PHOTO_FILES = ['foto1.png', 'foto2.png', 'foto3.png', 'foto4.png', 'foto5.png'];
-        const MIN_PHOTOS_REQUIRED = 3;
+        const PHOTO_FILES = ['foto1.jpg', 'foto2.jpg', 'foto3.jpg', 'foto4.jpg'];
+        const MIN_PHOTOS_REQUIRED = 2;
 
         // Win screen music
         const winMusic = new Audio('musica.mp3');
         winMusic.loop = true;
 
         // Achievement sound
-        const achievementSound = new Audio('logro.mp4');
+        const achievementSound = new Audio('logro.mp3');
 
         // Detect if device is mobile/touch
         function isTouchDevice() {
@@ -1516,7 +1518,7 @@
             trace: '#d4a002'
         };
 
-        // Game state
+		// Game state
         let gameRunning = false;
         let player = { x: 1, y: 1 };
         let enemies = [];
@@ -1524,6 +1526,10 @@
         // Goal area - 4x4 tiles in the bottom right corner
         let goalArea = { x: 35, y: 25, width: 4, height: 4 };
         let currentMazeIndex = 0;
+
+        // Power-up state
+        let isPoweredUp = false;
+        let powerUpTimer = null;
 
         // 10 different maze configurations
 // === Maze Generator (drop-in) ===
@@ -1831,49 +1837,32 @@ function breakBottomHighways(grid, {
 }
 
 
-// --- Sustituye la versión simple por esta ---
-function buildOneMaze({rows, cols, seed, targetMinDist=160, braid=0.35}) {
-  const rnd = mulberry32(seed);
-  let attempt = 0;
+        function buildOneMaze({rows, cols, seed, targetMinDist=160, braid=0.35}) {
+          const rnd = mulberry32(seed);
+          
+          // --- NUEVA LÓGICA SIMPLIFICADA ---
+          // Simplemente genera una cuadrícula con el 'braid' solicitado.
+          // Ya no comprobamos la longitud/giros del camino, porque 'braid' y 'camino largo' son opuestos.
+          const grid = generateMazeGrid({rows, cols, seed: seed, braid: braid, biasDir: null});
+          
+          // Comprueba si la ruta existe (¡importante!)
+          const start = {x:1, y:1};
+          const goal  = {x:37, y:27};
+          const sp = shortestPath(grid, start, goal);
 
-  // Requisitos de “no obviedad”
-  const minTurns = 16;          // exige bastantes giros
-  const maxStraightRun = 10;    // no permitir rectas larguísimas
-  const requireUpLeft = true;   // la ruta debe incluir pasos arriba e izquierda
+          // Si la ruta no existe (muy raro), genera un fallback simple
+          if (!sp) {
+              console.warn(`Maze seed ${seed} failed, building fallback.`);
+              const fallbackGrid = generateMazeGrid({rows, cols, seed: seed+1, braid: 0.1}); // Braid bajo
+              const fallbackSegments = gridToSegments(fallbackGrid);
+              return { paths: fallbackSegments, enemies: autoEnemiesFromSegments(fallbackSegments, rnd, 3) };
+          }
 
-  while (attempt < 80) {
-    attempt++;
-    const biasOptions = [null,'up','down','left','right'];
-    const bias = biasOptions[Math.floor(rnd()*biasOptions.length)];
-
-    const grid = generateMazeGrid({rows, cols, seed: seed+attempt*37, braid, biasDir: bias});
-    const start = {x:1, y:1};
-    const goal  = {x:37, y:27};
-
-    const sp = shortestPath(grid, start, goal);
-    if (!sp) continue;
-    if (sp.length < targetMinDist) continue;
-
-    const stats = pathStats(sp);
-    if (!stats) continue;
-
-    // 1) suficientes giros
-    if (stats.turns < minTurns) continue;
-    // 2) que la ruta incluya movimientos 'up' y 'left'
-    if (requireUpLeft && (stats.hist.up===0 || stats.hist.left===0)) continue;
-    // 3) sin autopistas rectas larguísimas
-    if (stats.maxStraightRun > maxStraightRun) continue;
-
-    const segments = gridToSegments(grid);
-    const enemies  = autoEnemiesFromSegments(segments, rnd, 3);
-    return { paths: segments, enemies };
-  }
-
-  // fallback si no encontramos uno que cumpla todo
-  const grid = generateMazeGrid({rows, cols, seed, braid: braid*0.6});
-  const segments = gridToSegments(grid);
-  return { paths: segments, enemies: autoEnemiesFromSegments(segments, mulberry32(seed+999), 3) };
-}
+          // Si la ruta existe, usa esta cuadrícula
+          const segments = gridToSegments(grid);
+          const enemies  = autoEnemiesFromSegments(segments, rnd, 3);
+          return { paths: segments, enemies };
+        }
 
 
 
@@ -1934,51 +1923,28 @@ function autoEnemiesFromSegments(segments, rnd, maxEnemies=3) {
 
 
 // === Construye la lista completa de MAZE_CONFIGS ===
-const MAZE_CONFIGS = (function makeMazes() {
-  // 1) Mantén tu Maze 1 intacto (copiado de tu original)
-  const MAZE_1_ORIGINAL = {
-    paths: [
-      [[1, 1], [1, 8]], [[1, 10], [1, 15]], [[1, 17], [1, 25]], [[1, 27], [1, 38]],
-      [[3, 3], [3, 12]], [[3, 14], [3, 20]], [[3, 22], [3, 35]],
-      [[5, 1], [5, 7]], [[5, 9], [5, 18]], [[5, 20], [5, 30]], [[5, 32], [5, 38]],
-      [[7, 5], [7, 15]], [[7, 17], [7, 25]], [[7, 27], [7, 33]],
-      [[9, 1], [9, 10]], [[9, 12], [9, 22]], [[9, 24], [9, 38]],
-      [[11, 3], [11, 8]], [[11, 10], [11, 18]], [[11, 20], [11, 28]], [[11, 30], [11, 36]],
-      [[13, 1], [13, 12]], [[13, 14], [13, 25]], [[13, 27], [13, 38]],
-      [[15, 5], [15, 10]], [[15, 12], [15, 20]], [[15, 22], [15, 32]],
-      [[17, 1], [17, 15]], [[17, 17], [17, 28]], [[17, 30], [17, 38]],
-      [[19, 3], [19, 10]], [[19, 12], [19, 23]], [[19, 25], [19, 35]],
-      [[21, 1], [21, 8]], [[21, 10], [21, 18]], [[21, 20], [21, 30]], [[21, 32], [21, 38]],
-      [[23, 5], [23, 13]], [[23, 15], [23, 25]], [[23, 27], [23, 33]],
-      [[25, 1], [25, 10]], [[25, 12], [25, 20]], [[25, 22], [25, 38]],
-      [[27, 3], [27, 15]], [[27, 17], [27, 28]], [[27, 30], [27, 35]],
-      [[28, 1], [28, 38]],
-      [[1, 1], [9, 1]], [[1, 5], [7, 5]], [[1, 10], [5, 10]], [[3, 3], [11, 3]],
-      [[5, 7], [13, 7]], [[3, 12], [13, 12]], [[1, 15], [15, 15]], [[5, 18], [19, 18]],
-      [[3, 20], [13, 20]], [[7, 25], [19, 25]], [[1, 27], [13, 27]], [[5, 30], [21, 30]],
-      [[3, 35], [27, 35]], [[1, 38], [28, 38]], [[13, 1], [25, 1]], [[11, 8], [21, 8]],
-      [[17, 10], [25, 10]], [[19, 23], [27, 23]], [[11, 28], [27, 28]]
-    ],
-    enemies: [
-      { x: 10, y: 3, dx: 1, dy: 0, path: 'horizontal', bounds: { minX: 3, maxX: 12, y: 3 } },
-      { x: 15, y: 7, dx: 0, dy: 1, path: 'vertical', bounds: { x: 15, minY: 5, maxY: 15 } },
-      { x: 18, y: 19, dx: -1, dy: 0, path: 'horizontal', bounds: { minX: 12, maxX: 23, y: 19 } }
-    ]
-  };
+        const MAZE_CONFIGS = (function makeMazes() {
+            const configs = []; // Empezamos con un array vacío
+            
+            const seedsBase = 1337;
+            // Aseguramos 10 valores para targets (añadí uno al final)
+            const targets = [150, 160, 170, 180, 185, 190, 195, 200, 205, 210]; 
 
-  const configs = [MAZE_1_ORIGINAL];
-
-  // Ajustes por “nivel”: más distancia objetivo y braid medio
-  const seedsBase = 1337;
-  const targets = [150, 160, 170, 180, 185, 190, 195, 200, 205]; // solución más larga en mazes posteriores
-  for (let i=0; i<9; i++) {
-    const seed   = seedsBase + i*97;
-    const target = targets[i] || 170;
-    const braid  = 0.60 + (i*0.02); // más loops poco a poco
-    configs.push( buildOneMaze({ rows: ROWS, cols: COLS, seed, targetMinDist: target, braid }) );
-  }
-  return configs;
-})();
+            // Hacemos el bucle 10 veces (de 0 a 9) para tener 10 laberintos NUEVOS
+            for (let i = 0; i < 10; i++) { 
+                const seed   = seedsBase + i*97;
+                const target = targets[i] || 170;
+                
+                // *** MI RECOMENDACIÓN ***
+                // Prueba con 0.8 en lugar de 1.0. 
+                // braid = 1.0 elimina TODOS los callejones sin salida.
+                // braid = 0.8 elimina el 80%, dejando algunos para que el laberinto siga siendo un desafío.
+                const braid  = 0.8 + (i*0.02); 
+                
+                configs.push( buildOneMaze({ rows: ROWS, cols: COLS, seed, targetMinDist: target, braid }) );
+            }
+            return configs;
+        })();
 
 
         // Create a complex maze
@@ -2049,6 +2015,54 @@ const MAZE_CONFIGS = (function makeMazes() {
             playSound(200, 0.1, 'square');
             setTimeout(() => playSound(100, 0.1, 'square'), 50);
         }
+		
+function playKillSound() {
+            // Un sonido agudo para "comer" al enemigo
+            playSound(1000, 0.05, 'sawtooth');
+            setTimeout(() => playSound(1200, 0.1, 'sawtooth'), 50);
+        }
+
+        function relocateSingleEnemy(enemy) {
+            // (Esta es la misma lógica que tu función relocateEnemies, 
+            // pero aplicada a un solo enemigo)
+            let attempts = 0;
+            let newX, newY;
+            do {
+                newX = Math.floor(Math.random() * COLS);
+                newY = Math.floor(Math.random() * ROWS);
+                attempts++;
+            } while ((maze[newY][newX] !== 0 || (newX === player.x && newY === player.y)) && attempts < 100);
+
+            if (attempts < 100) {
+                enemy.x = newX;
+                enemy.y = newY;
+                // Random direction
+                const directions = [
+                    { dx: 1, dy: 0 },  // right
+                    { dx: -1, dy: 0 }, // left
+                    { dx: 0, dy: 1 },  // down
+                    { dx: 0, dy: -1 }  // up
+                ];
+                const newDir = directions[Math.floor(Math.random() * directions.length)];
+                enemy.dx = newDir.dx;
+                enemy.dy = newDir.dy;
+            }
+        }
+
+        function activatePowerUp() {
+            // Si ya estabas con power-up, resetea el tiempo
+            if (powerUpTimer) {
+                clearTimeout(powerUpTimer);
+            }
+            isPoweredUp = true;
+            playAchievementSound(); // Reusamos el sonido de logro
+
+            // Inicia el temporizador de 10 segundos
+            powerUpTimer = setTimeout(() => {
+                isPoweredUp = false;
+                powerUpTimer = null;
+            }, 10000); // 10,000 milisegundos = 10 segundos
+        }		
 
         function playWinSound() {
             const notes = [523.25, 659.25, 783.99, 1046.50];
@@ -2122,9 +2136,15 @@ const MAZE_CONFIGS = (function makeMazes() {
             }
         }
 
-        function drawPlayer() {
+function drawPlayer() {
             // Draw graduation cap emoji
             ctx.shadowColor = '#ffffff';
+
+            if (isPoweredUp) {
+                // Parpadea entre blanco y dorado
+                ctx.shadowColor = Math.floor(Date.now() / 100) % 2 === 0 ? '#eab003' : '#ffffff';
+            }
+            
             ctx.shadowBlur = 10;
             ctx.font = '16px Arial';
             ctx.textAlign = 'center';
@@ -2137,11 +2157,19 @@ const MAZE_CONFIGS = (function makeMazes() {
             ctx.shadowBlur = 0;
         }
 
-        function drawEnemies() {
+function drawEnemies() {
             enemies.forEach(enemy => {
-                // Draw virus/bug sprite (8-bit style)
-                ctx.fillStyle = COLORS.enemy;
-                ctx.shadowColor = COLORS.enemy;
+                
+                if (isPoweredUp) {
+                    // Si hay power-up, el enemigo es azul y "asustado"
+                    ctx.fillStyle = '#00aaff'; 
+                    ctx.shadowColor = '#00aaff';
+                } else {
+                    // Color normal
+                    ctx.fillStyle = COLORS.enemy;
+                    ctx.shadowColor = COLORS.enemy;
+                }
+                
                 ctx.shadowBlur = 8;
 
                 const centerX = enemy.x * TILE_SIZE + TILE_SIZE / 2;
@@ -2282,13 +2310,21 @@ const MAZE_CONFIGS = (function makeMazes() {
             });
         }
 
-        function checkCollisions() {
+function checkCollisions() {
             // Check enemy collision
             enemies.forEach(enemy => {
                 if (Math.abs(player.x - enemy.x) < 1 && Math.abs(player.y - enemy.y) < 1) {
-                    playZapSound();
-                    flashScreen();
-                    resetPlayer();
+                    
+                    if (isPoweredUp) {
+                        // ¡El jugador se come al enemigo!
+                        playKillSound();
+                        relocateSingleEnemy(enemy); // Reposiciona al enemigo
+                    } else {
+                        // El enemigo daña al jugador (como antes)
+                        playZapSound();
+                        flashScreen();
+                        resetPlayer();
+                    }
                 }
             });
 
@@ -2360,7 +2396,7 @@ const MAZE_CONFIGS = (function makeMazes() {
             const attempts = 0;
             const maxAttempts = 500;
 
-            for (let i = 0; i < 5 && attempts < maxAttempts; i++) {
+            for (let i = 0; i < 4 && attempts < maxAttempts; i++) {
                 let placed = false;
                 let photoAttempts = 0;
 
@@ -2433,23 +2469,27 @@ const MAZE_CONFIGS = (function makeMazes() {
                     photo.collected = true;
                     collectedPhotos.push(photo.photoFile);
                     showPhotoPopup(photo.photoFile);
-                    playAchievementSound();
                     updatePhotoCounter();
                 }
             });
         }
 
-        function showPhotoPopup(photoFile) {
-            gameRunning = false;
-            photoPopupImage.src = photoFile;
-            photoPopup.classList.remove('hidden');
-        }
+		function showPhotoPopup(photoFile) {
+			gameRunning = false;
+			stopBackgroundMusic(); // <-- añade esto
+			photoPopupImage.src = photoFile;
+			photoPopup.classList.remove('hidden');
+		}
 
-        function closePhotoPopup() {
-            photoPopup.classList.add('hidden');
-            gameRunning = true;
-            requestAnimationFrame(gameLoop);
-        }
+
+		function closePhotoPopup() {
+			photoPopup.classList.add('hidden');
+			gameRunning = true;
+			startBackgroundMusic();  // <-- añade esto
+			activatePowerUp(); // <-- AÑADE ESTO
+			requestAnimationFrame(gameLoop);
+		}
+
 
         // Music control functions
         function playWinMusic() {
@@ -2588,7 +2628,7 @@ const MAZE_CONFIGS = (function makeMazes() {
             gameRunning = true;
 
             // Select a random maze from the 10 available
-            currentMazeIndex = Math.floor(Math.random() * MAZE_CONFIGS.length);
+            currentMazeIndex = 1 + Math.floor(Math.random() * (MAZE_CONFIGS.length - 1));
             generateMaze(currentMazeIndex);
             initEnemies();
             generatePhotos(); // Generate photos after maze is created
