@@ -38,7 +38,7 @@
             image-rendering: crisp-edges;
         }
 
-        #startScreen, #winScreen {
+        #startScreen, #winScreen, #instructionsScreen {
             position: absolute;
             top: 0;
             left: 0;
@@ -54,7 +54,7 @@
             z-index: 1000;
         }
 
-        #startScreen.hidden, #winScreen.hidden {
+        #startScreen.hidden, #winScreen.hidden, #instructionsScreen.hidden {
             display: none;
         }
 
@@ -541,6 +541,60 @@
             box-shadow: 0 4px 0 #eab003;
         }
 
+        /* Instructions Screen */
+        .instructionsTitle {
+            font-size: 42px;
+            font-weight: bold;
+            color: #eab003;
+            text-shadow: 3px 3px 0 #ff00ff, -3px -3px 0 #00ffff;
+            margin-bottom: 40px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .instructionsText {
+            font-size: 20px;
+            color: #fff;
+            margin: 15px 40px;
+            line-height: 1.6;
+            font-family: 'Courier New', monospace;
+            text-align: left;
+            max-width: 700px;
+        }
+
+        .instructionsText::before {
+            content: "• ";
+            color: #eab003;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .continueButton {
+            background-color: #00ff00;
+            color: #000;
+            border: 4px solid #fff;
+            padding: 20px 50px;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin-top: 40px;
+            box-shadow: 0 6px 0 #00aa00;
+            transition: all 0.1s;
+            text-transform: uppercase;
+        }
+
+        .continueButton:hover {
+            background-color: #fff;
+            color: #000;
+            border-color: #00ff00;
+            box-shadow: 0 8px 0 #00ff00;
+        }
+
+        .continueButton:active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0 #00ff00;
+        }
+
         /* Mobile Controls */
         #mobileControls {
             position: relative;
@@ -707,6 +761,18 @@
                 margin-top: 15px;
             }
 
+            /* Instructions Screen Mobile */
+            .instructionsTitle {
+                font-size: 28px;
+                margin-bottom: 25px;
+            }
+
+            .instructionsText {
+                font-size: 16px;
+                margin: 12px 20px;
+                max-width: 90%;
+            }
+
             /* Start Screen Mobile */
             .logoImg {
                 max-width: 220px;
@@ -840,8 +906,19 @@
 
         <div id="startScreen" class="hidden">
             <img src="logo.png" alt="Microsistemas Logo" class="logoImg">
-            <button class="startButton" onclick="startGame()">ENCUENTRA TU INVITACIÓN</button>
+            <button class="startButton" onclick="showInstructions()">ENCUENTRA TU INVITACIÓN</button>
             <button class="startButton" onclick="showHighScores()">VER MEJORES TIEMPOS</button>
+        </div>
+
+        <div id="instructionsScreen" class="hidden">
+            <div class="instructionsTitle">INSTRUCCIONES</div>
+            <div class="instructionsText">
+                Para conseguir tu entrada, debes llegar hasta ella al final del laberinto evitando los monstruos.
+            </div>
+            <div class="instructionsText">
+                Para que el recorrido sea válido, primero debes recoger todas las fotografías dispersas por el camino.
+            </div>
+            <button class="continueButton" onclick="startGame()">¡Empezar!</button>
         </div>
 
         <canvas id="gameCanvas" width="800" height="600"></canvas>
@@ -912,6 +989,7 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const startScreen = document.getElementById('startScreen');
+        const instructionsScreen = document.getElementById('instructionsScreen');
         const winScreen = document.getElementById('winScreen');
         const gameTitle = document.getElementById('gameTitle');
         const introScreen = document.getElementById('introScreen');
@@ -952,7 +1030,7 @@
         let collectedPhotos = [];
         let photos = []; // Will be populated when maze is generated
         const PHOTO_FILES = ['foto1.jpg', 'foto2.jpg', 'foto3.jpg', 'foto4.jpg'];
-        const MIN_PHOTOS_REQUIRED = 2;
+        const MIN_PHOTOS_REQUIRED = 4;
 
         // Win screen music
         const winMusic = new Audio('musica.mp3');
@@ -2620,9 +2698,16 @@ function checkCollisions() {
         }
 
         // Start game
+        function showInstructions() {
+            startScreen.classList.add('hidden');
+            highScoresScreen.classList.add('hidden');
+            instructionsScreen.classList.remove('hidden');
+        }
+
         function startGame() {
             startScreen.classList.add('hidden');
             highScoresScreen.classList.add('hidden');
+            instructionsScreen.classList.add('hidden');
             gameTitle.classList.remove('hidden');
             nameEntryActive = false;
             gameRunning = true;
